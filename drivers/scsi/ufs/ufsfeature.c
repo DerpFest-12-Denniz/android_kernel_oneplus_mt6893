@@ -45,7 +45,6 @@
 #endif
 
 #define QUERY_REQ_TIMEOUT				1500 /* msec */
-
 struct ufsf_feature_para ufsf_para;
 
 static inline void ufsf_init_query(struct ufs_hba *hba,
@@ -322,6 +321,7 @@ void ufsf_device_check(struct ufs_hba *hba)
 		if (ret == -ENOMEM)
 			goto out_free_mem;
 	}
+
 	create_ufsplus_ctrl_proc(ufsf);
 
 	return;

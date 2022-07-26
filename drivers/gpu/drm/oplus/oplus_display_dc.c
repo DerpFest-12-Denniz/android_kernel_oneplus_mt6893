@@ -46,7 +46,7 @@ int oplus_display_panel_get_dimlayer_enable(void *buf)
 {
 	unsigned int *dimlayer_enable = buf;
 
-	(*dimlayer_enable) = oplus_panel_alpha;
+	(*dimlayer_enable) = oplus_dc_enable;
 
 	return 0;
 }
@@ -55,7 +55,8 @@ int oplus_display_panel_set_dimlayer_enable(void *buf)
 {
 	unsigned int *dimlayer_enable = buf;
 
-	oplus_panel_alpha = (*dimlayer_enable);
+	pr_info("oplus_display_panel_set_dimlayer_enable %d\n", *dimlayer_enable);
+	oplus_dc_enable = (*dimlayer_enable);
 
 	return 0;
 }
@@ -73,6 +74,7 @@ int oplus_display_panel_set_dim_dc_alpha(void *buf)
 {
 	unsigned int *dim_dc_alpha = buf;
 
+	pr_info("oplus_display_panel_set_dim_dc_alpha %d\n", *dim_dc_alpha);
 	oplus_dc_alpha = (*dim_dc_alpha);
 
 	return 0;

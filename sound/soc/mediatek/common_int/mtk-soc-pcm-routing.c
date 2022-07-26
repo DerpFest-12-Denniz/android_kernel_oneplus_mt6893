@@ -805,7 +805,6 @@ static const struct soc_enum Audio_Routing_Enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(Audio_IPOH_State), Audio_IPOH_State),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(Audio_I2S1_Setting), Audio_I2S1_Setting),
 #ifdef OPLUS_BUG_COMPATIBILITY
-	 * add for SmartPA. */
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(audio_i2s0di_setting), audio_i2s0di_setting),
 #endif /* OPLUS_BUG_COMPATIBILITY */
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(spk_type_str), spk_type_str),
@@ -846,7 +845,6 @@ static const struct snd_kcontrol_new Audio_snd_routing_controls[] = {
 	SOC_ENUM_EXT("MTK_SPK_TYPE_GET",
 		     Audio_Routing_Enum[9], spk_type_get, NULL),
 #ifdef OPLUS_BUG_COMPATIBILITY
-	 * add for MT6750N smartPa. */
 	SOC_ENUM_EXT("Audio_I2S0_Setting", Audio_Routing_Enum[9],
 		       audio_i2s0_setting_get, audio_i2s0_setting_set),
 #endif /* OPLUS_BUG_COMPATIBILITY */

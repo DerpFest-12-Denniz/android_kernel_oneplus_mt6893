@@ -414,7 +414,6 @@ static void mlog_buddyinfo(void)
 #else
 		unsigned long nr[MAX_ORDER] = {0};
 #endif
-
 		spin_lock_irqsave(&zone->lock, flags);
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
 		for (flc = 0; flc < FREE_AREA_COUNTS; ++flc) {

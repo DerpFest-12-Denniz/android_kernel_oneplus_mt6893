@@ -50,6 +50,7 @@ static int esd_brightness;
 static bool aod_state = false;
 extern unsigned long oplus_display_brightness;
 extern unsigned long oplus_max_normal_brightness;
+extern unsigned long aod_light_mode;
 //static int aod_finger_unlock_flag = 0;
 
 /*#ifdef OPLUS_FEATURE_TP_BASIC*/
@@ -396,7 +397,7 @@ static void lcm_panel_init(struct lcm *ctx)
 	lcm_dcs_write_seq_static(ctx,0x6F,0x05);
 	lcm_dcs_write_seq_static(ctx,0xB5,0x7F,0x00,0x11,0x50);
 	lcm_dcs_write_seq_static(ctx,0x6F,0x0B);
-	lcm_dcs_write_seq_static(ctx,0xB5,0x00,0x00,0x50);
+	lcm_dcs_write_seq_static(ctx,0xB5,0x00,0x29,0x50);
 	lcm_dcs_write_seq_static(ctx,0x6F,0x10);
 	lcm_dcs_write_seq_static(ctx,0xB5,0x11,0x11,0x11,0x11,0x11);
 
@@ -681,7 +682,7 @@ static const struct drm_display_mode performance_mode = {
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
 	.pll_clk = 209,
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -752,7 +753,7 @@ static struct mtk_panel_params ext_params = {
 
 static struct mtk_panel_params ext_params_90hz = {
 	.pll_clk = 415,
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
         .cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -988,7 +989,7 @@ static int panel_doze_disable(struct drm_panel *panel, void *dsi, dcs_write_gce 
 
 	/*if (oplus_fp_notify_down_delay)
 		aod_finger_unlock_flag = 1;*/
-
+	usleep_range(35*1000, 35*1000 + 100);
 	/* Switch back to VDO mode */
 	for (i = 0; i < (sizeof(lcm_aod_to_normal) / sizeof(struct LCM_setting_table)); i++) {
 		unsigned cmd;
@@ -1032,7 +1033,7 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
 	{REGFLAG_CMD, 2, {0x6F,0x05}},
 	{REGFLAG_CMD, 5, {0xB5,0x7F,0x00,0x11,0x50}},
 	{REGFLAG_CMD, 2, {0x6F,0x0B}},
-	{REGFLAG_CMD, 4, {0xB5,0x00,0x00,0x50}},
+	{REGFLAG_CMD, 4, {0xB5,0x00,0x29,0x50}},
 	{REGFLAG_CMD, 2, {0x6F,0x10}},
 	{REGFLAG_CMD, 6, {0xB5,0x11,0x11,0x11,0x11,0x11}},
 
@@ -1070,7 +1071,10 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
 
 	{REGFLAG_CMD, 1, {0x35}},
 	{REGFLAG_CMD, 2, {0x53,0x20}},
-	{REGFLAG_CMD, 5, {0x51,0x00,0x00,0x07,0xFF}},
+
+	{REGFLAG_CMD, 2, {0x6F,0x02}},
+	{REGFLAG_CMD, 3, {0x51,0x05,0xFF}},
+
 	{REGFLAG_CMD, 5, {0x2A,0x00,0x00,0x04,0x37}},
 	{REGFLAG_CMD, 5, {0x2B,0x00,0x00,0x09,0x5F}},
 	{REGFLAG_CMD, 19, {0x91,0x89,0x28,0x00,0x14,0xC2,0x00,0x03,0x1C,0x02,0x8C,0x00,0x0F,0x05,0x0E,0x02,0x8B,0x10,0xF0}},
@@ -1085,6 +1089,23 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
 	{REGFLAG_DELAY,120,{}},
 	{REGFLAG_CMD, 1, {0x29}},
 	{REGFLAG_DELAY,20,{}},
+
+	{REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x00}},
+	{REGFLAG_CMD, 2, {0xC0,0x46}},
+	{REGFLAG_CMD, 2, {0x6F,0x01}},
+	{REGFLAG_CMD, 2, {0xC0,0xB3}},
+	{REGFLAG_CMD, 5, {0xFF,0xAA,0x55,0xA5,0x80}},
+	{REGFLAG_CMD, 2, {0x6F,0x2E}},
+	{REGFLAG_CMD, 2, {0xFB,0xD1}},
+	{REGFLAG_CMD, 2, {0x6F,0x61}},
+	{REGFLAG_CMD, 2, {0xF3,0x80}},
+
+	{REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x01}},
+	{REGFLAG_CMD, 2, {0x6F,0x02}},
+	{REGFLAG_CMD, 2, {0xD2,0x24}},
+
+	{REGFLAG_CMD, 2, {0x6F,0x06}},
+	{REGFLAG_CMD, 2, {0xD2,0x06}},
 
     {REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x00}},
     {REGFLAG_CMD, 2, {0x6F,0x0D}},
@@ -1130,7 +1151,7 @@ static int panel_doze_enable(struct drm_panel *panel, void *dsi, dcs_write_gce c
 				cb(dsi, handle, lcm_normal_to_aod_sam[i].para_list, lcm_normal_to_aod_sam[i].count);
 		}
 	}
-
+	aod_light_mode = 0;
 	return 0;
 }
 
@@ -1274,6 +1295,11 @@ static int lcm_panel_poweron(struct drm_panel *panel)
 		return 0;
 
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(5);
@@ -1695,6 +1721,11 @@ static int lcm_probe(struct mipi_dsi_device *dsi)
 			return -EPROBE_DEFER;
 	}
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(2);

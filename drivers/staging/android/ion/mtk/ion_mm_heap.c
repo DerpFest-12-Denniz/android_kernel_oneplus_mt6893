@@ -57,6 +57,8 @@
 #include "oplus_ion_boost_pool.h"
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
 
+#define SZ_4G				_AC(0x100000000, ULL)
+
 struct ion_mm_buffer_info {
 	int module_id;
 	int fix_module_id;
@@ -100,6 +102,11 @@ static unsigned int order_gfp_flags[] = {
 
 static const unsigned int orders[] = { 4, 1, 0 };
 
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+struct kmem_cache *boost_ion_info_cachep;
+bool create_kmemcache_ion_info_success = false;
+#endif
+
 /* static const unsigned int orders[] = {8, 4, 0}; */
 static const int num_orders = ARRAY_SIZE(orders);
 static int order_to_index(unsigned int order)
@@ -132,6 +139,9 @@ struct page_info {
 	struct page *page;
 	unsigned int order;
 	struct list_head list;
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+	bool from_boost_kmem_cache;
+#endif
 };
 
 unsigned int caller_pid;
@@ -208,11 +218,25 @@ static struct page_info *alloc_largest_available(struct ion_system_heap *heap,
 	struct page_info *info;
 	int i;
 
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+	if (likely(create_kmemcache_ion_info_success)) {
+		info = kmem_cache_zalloc(boost_ion_info_cachep, GFP_KERNEL);
+		if (!info)
+			return ERR_PTR(-ENOMEM);
+		info->from_boost_kmem_cache = true;
+	} else {
+		info = kmalloc(sizeof(*info), GFP_KERNEL);
+		if (!info)
+			return ERR_PTR(-ENOMEM);
+		info->from_boost_kmem_cache = false;
+	}
+#else
 	info = kmalloc(sizeof(*info), GFP_KERNEL);
 	if (!info) {
 		IONMSG("%s kmalloc failed info is null.\n", __func__);
 		return NULL;
 	}
+#endif
 
 	for (i = 0; i < num_orders; i++) {
 		if (size < order_to_size(orders[i]))
@@ -229,7 +253,14 @@ static struct page_info *alloc_largest_available(struct ion_system_heap *heap,
 		INIT_LIST_HEAD(&info->list);
 		return info;
 	}
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+	if (likely(info->from_boost_kmem_cache))
+		kmem_cache_free(boost_ion_info_cachep, info);
+	else
+		kfree(info);
+#else
 	kfree(info);
+#endif
 
 	return NULL;
 }
@@ -407,13 +438,24 @@ static int ion_mm_heap_allocate(struct ion_heap *heap,
 		struct page *page = NULL;
 
 		while (size_remaining > 0) {
-			info = kmalloc(sizeof(*info), GFP_KERNEL);
-			if (!info)
-				break;
+			if (likely(create_kmemcache_ion_info_success)) {
+				info = kmem_cache_zalloc(boost_ion_info_cachep, GFP_KERNEL);
+				if (!info)
+					break;
+				info->from_boost_kmem_cache = true;
+			} else {
+				info = kmalloc(sizeof(*info), GFP_KERNEL);
+				if (!info)
+					break;
+				info->from_boost_kmem_cache = false;
+			}
 			page = boost_pool_allocate(boost_pool,
 						   size_remaining, max_order);
 			if (!page) {
-				kfree(info);
+				if (info->from_boost_kmem_cache)
+					kmem_cache_free(boost_ion_info_cachep, info);
+				else
+					kfree(info);
 				break;
 			}
 
@@ -500,7 +542,14 @@ static int ion_mm_heap_allocate(struct ion_heap *heap,
 		sg_dma_len(sg) = sg->length;
 		sg = sg_next(sg);
 		list_del(&info->list);
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+		if (likely(info->from_boost_kmem_cache))
+			kmem_cache_free(boost_ion_info_cachep, info);
+		else
+			kfree(info);
+#else
 		kfree(info);
+#endif
 	}
 
 	/* create MM buffer info for it */
@@ -562,7 +611,14 @@ err:
 		list_for_each_entry_safe(info, tmp_info, &pages, list) {
 			free_buffer_page(sys_heap, buffer, info->page,
 					 info->order);
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+		if (likely(info->from_boost_kmem_cache))
+			kmem_cache_free(boost_ion_info_cachep, info);
+		else
 			kfree(info);
+#else
+			kfree(info);
+#endif
 		}
 	}
 	IONMSG("error: mm_alloc fail: size=%lu, flag=%lu.\n", size, flags);
@@ -806,6 +862,7 @@ static int ion_mm_heap_shrink(struct ion_heap *heap, gfp_t gfp_mask,
 		}
 	}
 #else /* CONFIG_OPLUS_ION_BOOSTPOOL */
+
 	for (i = 0; i < num_orders; i++) {
 		struct ion_page_pool *pool = sys_heap->pools[i];
 
@@ -1117,8 +1174,13 @@ out:
 	end = sched_clock();
 	if (buffer->sg_table &&
 	    (buffer->sg_table->nents > 10 &&
+#if BITS_PER_LONG == 32
+	    (div_u64((end - start),
+	     buffer->sg_table->nents > 500000ULL)) ||
+#else
 	    ((end - start) /
 	     buffer->sg_table->nents > 500000ULL) ||
+#endif
 	    (end - start > 50000000ULL)))
 		IONMSG("warn: p(%d-%d) phys time:%lluns n:%u s:%zu\n",
 		       buffer_info->module_id,
@@ -1257,6 +1319,16 @@ static int __do_dump_share_fd(const void *data, struct file *file,
 
 	buffer = ion_drv_file_to_buffer(file);
 	if (IS_ERR_OR_NULL(buffer))
+		return 0;
+
+	/*
+	 * secure heap buffer struct is different with mm_heap buffer,
+	 * and it isn't public, don't dump here.
+	 *
+	 * only dump supported heap type in ion_mm_heap.c
+	 */
+	if (buffer->heap->type != (unsigned int)ION_HEAP_TYPE_MULTIMEDIA &&
+	    buffer->heap->type != (unsigned int)ION_HEAP_TYPE_SYSTEM)
 		return 0;
 
 	bug_info = (struct ion_mm_buffer_info *)buffer->priv_virt;
@@ -1503,9 +1575,8 @@ static int ion_mm_heap_debug_show(struct ion_heap *heap, struct seq_file *s,
 
 			client->dbg_hnd_cnt++;
 			ION_DUMP(s,
-				 "\thandle=0x%p (id: %d), buffer=0x%p/0x%lx, heap=%u, fd=%4d, ts: %lldms (%d)\n",
+				 "\thandle=0x%p (id: %d), buffer=0x%p, heap=%u, fd=%4d, ts: %lldms (%d)\n",
 				 handle, handle->id, handle->buffer,
-				 (unsigned long)handle->buffer,
 				 handle->buffer->heap->id,
 				 handle->dbg.fd,
 				 handle->dbg.user_ts,
@@ -1832,6 +1903,7 @@ size_t ion_mm_heap_total_memory(void)
 	return (size_t)(atomic64_read(&page_sz_cnt) * 4096);
 }
 
+#ifdef OPLUS_BUG_STABILITY
 size_t get_ion_heap_by_pid(pid_t pid)
 {
 	struct ion_device *dev = g_ion_device;
@@ -1876,6 +1948,14 @@ size_t get_ion_heap_by_pid(pid_t pid)
 	return buffer_size/1024;
 }
 EXPORT_SYMBOL(get_ion_heap_by_pid);
+#endif
+
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+static void init_once(void *foo)
+{
+	;
+}
+#endif
 
 struct ion_heap *ion_mm_heap_create(struct ion_platform_heap *unused)
 {
@@ -1928,8 +2008,15 @@ struct ion_heap *ion_mm_heap_create(struct ion_platform_heap *unused)
 			pr_err("%s: init kcrit scene failed!\n",
 			       __func__);
 
+		unsigned long cam_sz = 32 * 256, uncached_sz = 32 * 256;
+		/* on low memory target, we should not set 128Mib on camera pool. */
+		if (totalram_pages > (SZ_4G >> PAGE_SHIFT)) {
+			cam_sz = 128 * 256;
+			uncached_sz = 64 * 256;
+		}
+
 		heap->uncached_boost_pool = boost_pool_create(0,
-							      64 * 256,
+							      uncached_sz,
 							      boost_root_dir,
 							      "ion_uncached");
 		if (!heap->uncached_boost_pool)
@@ -1937,12 +2024,18 @@ struct ion_heap *ion_mm_heap_create(struct ion_platform_heap *unused)
 			       __func__);
 
 		heap->cached_boost_pool = boost_pool_create(ION_FLAG_CACHED,
-							    128 * 256,
+							    cam_sz,
 							    boost_root_dir,
 							    "camera");
 		if (!heap->cached_boost_pool)
 			pr_err("%s: create boost_pool camera failed!\n",
 			       __func__);
+		boost_ion_info_cachep = kmem_cache_create("boost_ion_info_cachep",
+			sizeof(struct page_info), 0,0, init_once);
+		if (boost_ion_info_cachep != NULL)
+			create_kmemcache_ion_info_success = true;
+		else
+			pr_err("boost_ion_info_cachep create failed\n");
 	}
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
 	return &heap->heap;
@@ -2173,18 +2266,33 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd,
 	struct ion_mm_data param;
 	long ret = 0;
 	/* char dbgstr[256]; */
-	unsigned long ret_copy;
+	unsigned long ret_copy = 0;
 	unsigned int buffer_sec = 0;
 	enum ion_heap_type buffer_type = 0;
 	struct ion_buffer *buffer;
 	struct ion_handle *kernel_handle;
 	int domain_idx = 0;
 
-	if (from_kernel)
+	if (!arg) {
+		IONMSG("%s:err arg = NULL. %s(%s),k:%d\n",
+		       __func__, client->name, client->dbg_name, from_kernel);
+		ret = -EINVAL;
+		goto ioctl_out;
+	}
+
+	if (from_kernel) {
 		param = *(struct ion_mm_data *)arg;
-	else
+	} else {
 		ret_copy = copy_from_user(&param, (void __user *)arg,
 					  sizeof(struct ion_mm_data));
+		if (ret_copy != 0) {
+			IONMSG("%s:err arg copy failed, ret_copy = %lu. %s(%s),%d, k:%d\n",
+			       __func__, ret_copy, client->name, client->dbg_name,
+			       client->pid, from_kernel);
+			ret = -EFAULT;
+			goto ioctl_out;
+		}
+	}
 
 	switch (param.mm_cmd) {
 	case ION_MM_CONFIG_BUFFER:
@@ -2231,7 +2339,7 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd,
 		}
 
 		if ((int)buffer->heap->type == ION_HEAP_TYPE_MULTIMEDIA) {
-			struct ion_fb_buffer_info *buffer_info =
+			struct ion_mm_buffer_info *buffer_info =
 			    buffer->priv_virt;
 			enum ION_MM_CMDS mm_cmd = param.mm_cmd;
 
@@ -2333,9 +2441,9 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd,
 #endif
 		} else {
 			IONMSG
-			    (": Error. config buffer is not from %c heap.\n",
+			    (": Error. config buffer is not from %d heap.\n",
 			     buffer->heap->type);
-			ret = 0;
+			ret = -EINVAL;
 		}
 		ion_drv_put_kernel_handle(kernel_handle);
 
@@ -2424,10 +2532,32 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd,
 			param.get_phys_param.phy_addr = phy_addr;
 
 			mutex_unlock(&buffer->lock);
+		} else if (buffer_type == ION_HEAP_TYPE_MULTIMEDIA_SEC) {
+			struct ion_heap *sec_heap;
+			ion_phys_addr_t phy_addr;
+			size_t len;
+			struct ion_heap_ops *sec_ops;
+			int ret;
+
+			len = param.get_phys_param.len;
+			sec_heap = buffer->heap;
+			if (sec_heap->ops) {
+				sec_ops = sec_heap->ops;
+			} else {
+				IONMSG("%s #%d: buffer err\n",
+				       __func__, __LINE__);
+				ion_drv_put_kernel_handle(kernel_handle);
+				return -EFAULT;
+			}
+
+			mutex_lock(&buffer->lock);
+			ret = sec_ops->phys(sec_heap, buffer, &phy_addr, &len);
+			param.get_phys_param.phy_addr = phy_addr;
+			mutex_unlock(&buffer->lock);
 
 		} else {
 			IONMSG
-			    (": Error. get iova is not from %c heap.\n",
+			    (": Error. get iova is not from %d heap.\n",
 			     buffer->heap->type);
 			ret = -EFAULT;
 		}
@@ -2565,12 +2695,29 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd,
 		ret = -EFAULT;
 	}
 
-	if (from_kernel)
+	if (ret) {
+		IONMSG("[%s]:failed to finish io-cmd(%d). %s(%s),%d, k:%d\n",
+		       __func__, param.mm_cmd,
+		       client->name, client->dbg_name,
+		       client->pid, from_kernel);
+		goto ioctl_out;
+	}
+
+	if (from_kernel) {
 		*(struct ion_mm_data *)arg = param;
-	else
+	} else {
 		ret_copy =
 		    copy_to_user((void __user *)arg, &param,
 				 sizeof(struct ion_mm_data));
+		if (ret_copy) {
+			IONMSG("%s: copytouser failed, ret = %lu. %s(%s),%d, k:%d\n",
+			       __func__, ret_copy, client->name, client->dbg_name,
+			       client->pid, from_kernel);
+			ret = -EFAULT;
+		}
+	}
+
+ioctl_out:
 	return ret;
 }
 
@@ -2644,7 +2791,15 @@ int ion_mm_heap_cache_allocate(struct ion_heap *heap,
 		sg_dma_len(sg) = sg->length;
 		sg = sg_next(sg);
 		list_del(&info->list);
+
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+		if (likely(info->from_boost_kmem_cache))
+			kmem_cache_free(boost_ion_info_cachep, info);
+		else
+			kfree(info);
+#else
 		kfree(info);
+#endif
 	}
 
 	buffer->sg_table = table;
@@ -2660,7 +2815,14 @@ err:
 	list_for_each_entry_safe(info, tmp_info, &pages, list) {
 		free_buffer_page(sys_heap, buffer,
 				 info->page, info->order);
+#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
+		if (likely(info->from_boost_kmem_cache))
+			kmem_cache_free(boost_ion_info_cachep, info);
+		else
+			kfree(info);
+#else
 		kfree(info);
+#endif
 	}
 	IONMSG("mm_cache_alloc fail: size=%lu, flag=%lu.\n", size, flags);
 

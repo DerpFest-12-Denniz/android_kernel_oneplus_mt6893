@@ -44,17 +44,22 @@
 
 static DEFINE_SPINLOCK(imgsensor_drv_lock);
 
+#ifndef VENDOR_HI846_EDIT
+#define VENDOR_HI846_EDIT
+#endif
 
 #define LONGEXP1	0xFFFF9   /* 最大曝光行（20bit） */
 #define LONGEXP2	0xFFF9   /* 65529 lines, =0.83s */
 
 
+#ifdef VENDOR_HI846_EDIT
 #define DEVICE_VERSION_HI846    "hi846"
 static kal_uint32 streaming_control(kal_bool enable);
 //extern void register_imgsensor_deviceinfo(char *name, char *version, u8 module_id);
 //static uint8_t deviceInfo_register_value;
 extern unsigned char hi846_get_module_id(void);
 #define MODULE_ID_OFFSET 0x0000
+#endif
 
 static imgsensor_info_struct imgsensor_info = {
 	.sensor_id = HI846_SENSOR_ID_20615,
@@ -253,6 +258,7 @@ static struct SENSOR_WINSIZE_INFO_STRUCT imgsensor_winsize_info[7] =
   { 3264, 2448,   0, 684, 3264, 1080, 3264, 1080, 672, 0, 1920, 1080, 0, 0, 1920, 1080}  // custom2
 };
 
+#ifdef VENDOR_HI846_EDIT
 static kal_uint16 read_module_id(void)
 {
 	kal_uint16 get_byte=0;
@@ -264,6 +270,7 @@ static kal_uint16 read_module_id(void)
 
 	return get_byte;
 }
+#endif
 
 
 static kal_uint16 read_cmos_sensor(kal_uint32 addr)
@@ -291,6 +298,7 @@ static void write_cmos_sensor_8(kal_uint32 addr, kal_uint32 para)
 	//kdSetI2CSpeed(400);
 	iWriteRegI2C(pu_send_cmd, 3, imgsensor.i2c_write_id);
 }
+#ifdef VENDOR_HI846_EDIT
 static kal_uint8 gHi846_SN[CAMERA_MODULE_SN_LENGTH];
 static void read_eeprom_SN(void)
 {
@@ -298,7 +306,7 @@ static void read_eeprom_SN(void)
 	kal_uint8 *get_byte= &gHi846_SN[0];
 	for (idx = 0; idx <CAMERA_MODULE_SN_LENGTH; idx++) {
 		char pusendcmd[2] = {0x00 , (char)((0xB0 + idx) & 0xFF) };
-		iReadRegI2C(pusendcmd , 2, (u8*)&get_byte[idx],1, 0xA0);
+		iReadRegI2C(pusendcmd , 2, (u8*)&get_byte[idx],1, 0xA2);
 		LOG_INF("gHi846_SN[%d]: 0x%x  0x%x\n", idx, get_byte[idx], gHi846_SN[idx]);
 	}
 }
@@ -306,6 +314,7 @@ static void read_eeprom_SN(void)
 
 
 
+#endif
 
 static void set_dummy(void)
 {
@@ -2621,7 +2630,9 @@ static void custom2_setting(void)
 	write_cmos_sensor(0x331A, 0x0001);
 	#endif
 };
-
+ extern enum IMGSENSOR_RETURN Eeprom_DataInit(
+            enum IMGSENSOR_SENSOR_IDX sensor_idx,
+            kal_uint32 sensorID);
 static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 {
 	kal_uint8 i = 0;
@@ -2632,9 +2643,10 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 			spin_unlock(&imgsensor_drv_lock);
 			do {
 				*sensor_id =return_sensor_id();
-				LOG_INF("weisaholun hi846 [get_imgsensor_id] sensor_id = 0x%x",*sensor_id);
-				if (*sensor_id == HI846_SENSOR_ID) {
+				LOG_INF("hi846 [get_imgsensor_id] sensor_id = 0x%x",*sensor_id);
+				if (*sensor_id == 0x846) {
 					*sensor_id = imgsensor_info.sensor_id;
+                    #ifdef VENDOR_HI846_EDIT
                     read_eeprom_SN();
                     imgsensor_info.module_id = read_module_id();
                    // if (deviceInfo_register_value == 0x00) {
@@ -2642,7 +2654,10 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 					//		imgsensor_info.module_id);
                   //      deviceInfo_register_value=0x01;
                   //  }
+                    #endif
 					LOG_INF("i2c write id  : 0x%x, sensor id: 0x%x\n", imgsensor.i2c_write_id,*sensor_id);
+                    Eeprom_DataInit(IMGSENSOR_SENSOR_IDX_MAIN2, *sensor_id);
+                    gImgEepromInfo.camNormdata[IMGSENSOR_SENSOR_IDX_MAIN2][39] = 2;
 					return ERROR_NONE;
 				}
 				LOG_INF("get_imgsensor_id Read sensor id fail, i2c write id: 0x%x,sensor id: 0x%x\n", imgsensor.i2c_write_id,*sensor_id);
@@ -2689,7 +2704,7 @@ static kal_uint32 open(void)
 		do {
 			sensor_id = return_sensor_id();
 			LOG_INF(" hi846 [open]: sensor_id = 0x%x\n",sensor_id);
-			if (sensor_id == HI846_SENSOR_ID) {
+			if (sensor_id == 0x846) {
 				sensor_id = imgsensor_info.sensor_id;
 				LOG_INF("i2c write id: 0x%x, sensor id: 0x%x\n", imgsensor.i2c_write_id, sensor_id);
 				break;
@@ -2703,9 +2718,15 @@ static kal_uint32 open(void)
 		}
 		retry = 2;
 	}
+	#ifndef VENDOR_HI846_EDIT
+	if (imgsensor_info.sensor_id != sensor_id) {
+		return ERROR_SENSOR_CONNECT_FAIL;
+	}
+	#else
 	if (imgsensor_info.sensor_id != sensor_id) {
 		return ERROR_SENSORID_READ_FAIL;
 	}
+	#endif
 	/* initail sequence write in  */
 
 	sensor_init();
@@ -3350,17 +3371,18 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
                         | (gHi846_SN[4*(*feature_data_32) + 1] << 8)
                         | (gHi846_SN[4*(*feature_data_32)] & 0xFF);
         break;
-        /*Henry.Chang@camera.driver 20181129, add for sensor Module SET*/
         case SENSOR_FEATURE_SET_SENSOR_OTP:
         {
             kal_int32 ret = IMGSENSOR_RETURN_SUCCESS;
             LOG_INF("SENSOR_FEATURE_SET_SENSOR_OTP length :%d\n", (UINT32)*feature_para_len);
             ret = Eeprom_CallWriteService((ACDK_SENSOR_ENGMODE_STEREO_STRUCT *)(feature_para));
 
+            #ifdef VENDOR_HI846_EDIT
             if (ret == ERROR_NONE)
             return ERROR_NONE;
             else
             return ERROR_MSDK_IS_ACTIVATED;
+            #endif
         }
 		case SENSOR_FEATURE_GET_PERIOD:
 			*feature_return_para_16++ = imgsensor.line_length;

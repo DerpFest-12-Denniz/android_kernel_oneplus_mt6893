@@ -431,6 +431,7 @@ void cpufreq_acct_update_power(struct task_struct *p, u64 cputime)
 #ifdef CONFIG_OPLUS_FEATURE_MIDAS
 	midas_record_task_times(uid, cputime, p, state);
 #endif
+
 	rcu_read_lock();
 	uid_entry = find_uid_entry_rcu(uid);
 	if (!uid_entry) {

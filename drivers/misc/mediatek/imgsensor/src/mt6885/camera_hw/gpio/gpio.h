@@ -66,7 +66,9 @@ struct GPIO {
 	struct pinctrl_state *ppinctrl_state_switch[
 		GPIO_CTRL_STATE_MAX_NUM_SWITCH];
 #endif
+#ifdef OPLUS_FEATURE_CAMERA_COMMON
 	struct pinctrl_state *pinctrl_state_ldo_enable;
+#endif
 	struct mutex         *pgpio_mutex;
 };
 

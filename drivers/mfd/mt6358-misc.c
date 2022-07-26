@@ -163,17 +163,28 @@ enum rtc_spare_enum {
 	RTC_32K_LESS,
 	RTC_LP_DET,
 	RTC_FG_INIT,
+	#ifdef OPLUS_BUG_STABILITY
 	RTC_REBOOT_KERNEL, // 15
 	RTC_SILENCE_BOOT,//16
 	RTC_META_BOOT,//17
 	RTC_SAU_BOOT,//18
+	#endif /* OPLUS_BUG_STABILITY */
+	#ifdef OPLUS_BUG_STABILITY
 	RTC_OPLUS_BATTERY,//19
+	#endif /* OPLUS_BUG_STABILITY */
+#ifdef OPLUS_BUG_STABILITY
 	RTC_FACTORY_BOOT,
+#endif /* OPLUS_BUG_STABILITY */
+#ifdef OPLUS_BUG_STABILITY
 	RTC_SENSOR_CAUSE_PANIC,
+#endif /* OPLUS_BUG_STABILITY */
 	RTC_SAFE_BOOT,
 #ifdef OPLUS_FEATURE_AGINGTEST
 	RTC_AGINGTEST_BOOT,
 #endif /*OPLUS_FEATURE_AGINGTEST */
+#ifdef OPLUS_BUG_STABILITY
+	RTC_EDL_BOOT,
+#endif /* OPLUS_BUG_STABILITY */
 	RTC_SPAR_NUM
 };
 
@@ -199,17 +210,28 @@ u16 rtc_spare_reg[RTC_SPAR_NUM][3] = {
 	{RTC_SPAR0, 0x1, 6},
 	{RTC_SPAR0, 0x1, 7},
 	{RTC_AL_HOU, 0xff, 8},
+#ifdef OPLUS_BUG_STABILITY
 	{RTC_SPAR0, 0x1, 8},
 	{RTC_SPAR0, 0x1, 9},
 	{RTC_SPAR0, 0x1, 10},
 	{RTC_SPAR0, 0x1, 11},
+#endif /* OPLUS_BUG_STABILITY */
+	#ifdef OPLUS_BUG_STABILITY
 	{RTC_AL_DOW, 0xff, 8},//battery electricity
+	#endif /* OPLUS_BUG_STABILITY */
+#ifdef OPLUS_BUG_STABILITY
 	{RTC_SPAR0, 0x1, 12},
+#endif /* OPLUS_BUG_STABILITY */
+#ifdef OPLUS_BUG_STABILITY
 	{RTC_SPAR0, 0x1, 13},
+#endif /* OPLUS_BUG_STABILITY */
+#ifdef OPLUS_BUG_STABILITY
 	{RTC_SPAR0, 0x1, 15},
 #ifdef OPLUS_FEATURE_AGINGTEST
 	{RTC_SPAR0, 0x01, 14},
 #endif /*OPLUS_FEATURE_AGINGTEST */
+	{RTC_AL_DOW, 0x1, 15},
+#endif /* OPLUS_BUG_STABILITY */
 };
 
 /*
@@ -716,6 +738,7 @@ void rtc_mark_fast(void)
 	spin_unlock_irqrestore(&rtc_misc->lock, flags);
 }
 
+#ifdef OPLUS_BUG_STABILITY
 void oplus_rtc_mark_reboot_kernel(void)
 {
 	unsigned long flags;
@@ -789,6 +812,16 @@ void oplus_rtc_mark_safe(void)
 	spin_unlock_irqrestore(&rtc_misc->lock, flags);
 }
 
+void oplus_rtc_mark_edl(void)
+{
+	unsigned long flags;
+
+	pr_notice("rtc_mark_edl\n");
+	spin_lock_irqsave(&rtc_misc->lock, flags);
+	mtk_rtc_set_spare_register(RTC_EDL_BOOT, 0x01);
+	spin_unlock_irqrestore(&rtc_misc->lock, flags);
+}
+
 void oplus_rtc_mark_sensor_cause_panic(void)
 {
 	unsigned long flags;
@@ -843,6 +876,7 @@ void  hal_rtc_clear_spar0_bit8(void)
 	mtk_rtc_set_spare_register(RTC_REBOOT_KERNEL, 0x0);
 	spin_unlock_irqrestore(&rtc_misc->lock, flags);
 }
+#endif/* OPLUS_BUG_STABILITY */
 
 static int pmic_config_interface(unsigned int RegNum, unsigned int val,
 			    unsigned int MASK, unsigned int SHIFT)

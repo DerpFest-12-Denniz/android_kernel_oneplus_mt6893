@@ -1032,10 +1032,9 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 			 * 20180126 remove to adapt with mt6771
 			 */
 			if (deviceInfo_register_value == 0x00) {
-				/*
 				register_imgsensor_deviceinfo("Cam_f",
 					DEVICE_VERSION_S5K4H7,
-					imgsensor_info.module_id);*/
+					imgsensor_info.module_id);
 				deviceInfo_register_value = 0x01;
 			}
 			LOG_INF(

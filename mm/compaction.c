@@ -1297,6 +1297,7 @@ static enum compact_result __compact_finished(struct zone *zone,
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
 	int flc = 0;
 #endif
+
 	if (cc->contended || fatal_signal_pending(current))
 		return COMPACT_CONTENDED;
 
@@ -1335,6 +1336,7 @@ static enum compact_result __compact_finished(struct zone *zone,
 	}
 
 	/* Direct compactor: Is a suitable page free? */
+
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
     for (flc = 0; flc < FREE_AREA_COUNTS; flc++) {
 #endif
@@ -1346,38 +1348,38 @@ static enum compact_result __compact_finished(struct zone *zone,
 #endif
 			bool can_steal;
 
-		/* Job done if page is free of the right migratetype */
+			/* Job done if page is free of the right migratetype */
 			if (!list_empty(&area->free_list[migratetype]))
 				return COMPACT_SUCCESS;
 
 #ifdef CONFIG_CMA
-		/* MIGRATE_MOVABLE can fallback on MIGRATE_CMA */
+			/* MIGRATE_MOVABLE can fallback on MIGRATE_CMA */
 			if (migratetype == MIGRATE_MOVABLE &&
 				!list_empty(&area->free_list[MIGRATE_CMA]))
 				return COMPACT_SUCCESS;
 #endif
-		/*
-		 * Job done if allocation would steal freepages from
-		 * other migratetype buddy lists.
-		 */
+			/*
+			* Job done if allocation would steal freepages from
+			* other migratetype buddy lists.
+			*/
 			if (find_suitable_fallback(area, order, migratetype,
-						true, &can_steal) != -1) {
+							true, &can_steal) != -1) {
 
-			/* movable pages are OK in any pageblock */
+				/* movable pages are OK in any pageblock */
 				if (migratetype == MIGRATE_MOVABLE)
 					return COMPACT_SUCCESS;
 
-			/*
-			 * We are stealing for a non-movable allocation. Make
-			 * sure we finish compacting the current pageblock
-			 * first so it is as free as possible and we won't
-			 * have to steal another one soon. This only applies
-			 * to sync compaction, as async compaction operates
-			 * on pageblocks of the same migratetype.
-			 */
+				/*
+				* We are stealing for a non-movable allocation. Make
+				* sure we finish compacting the current pageblock
+			 	* first so it is as free as possible and we won't
+			 	* have to steal another one soon. This only applies
+			 	* to sync compaction, as async compaction operates
+			 	* on pageblocks of the same migratetype.
+			 	*/
 				if (cc->mode == MIGRATE_ASYNC ||
-					IS_ALIGNED(cc->migrate_pfn,
-							pageblock_nr_pages)) {
+						IS_ALIGNED(cc->migrate_pfn,
+								pageblock_nr_pages)) {
 					return COMPACT_SUCCESS;
 				}
 

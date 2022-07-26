@@ -34,7 +34,6 @@
 #include <linux/pm_runtime.h>
 #include <linux/blk-cgroup.h>
 #include <linux/debugfs.h>
-#include <mt-plat/mtk_blocktag.h> /* MTK PATCH */
 #include <linux/psi.h>
 #include <linux/blk-crypto.h>
 
@@ -47,18 +46,16 @@
 #include "blk-wbt.h"
 
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 #include "foreground_io_opt/foreground_io_opt.h"
 #endif
 
 #ifdef CONFIG_DEBUG_FS
+struct dentry *blk_debugfs_root;
+#endif
 
 #if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
 #include <linux/iomonitor/iomonitor.h>
 #endif /*OPLUS_FEATURE_IOMONITOR*/
-
-struct dentry *blk_debugfs_root;
-#endif
 
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_remap);
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_rq_remap);
@@ -129,7 +126,6 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
 
 	INIT_LIST_HEAD(&rq->queuelist);
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	INIT_LIST_HEAD(&rq->fg_list);
 #endif
 	INIT_LIST_HEAD(&rq->timeout_list);
@@ -851,7 +847,6 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
 	if (!q)
 		return NULL;
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	INIT_LIST_HEAD(&q->fg_head);
 #endif
 	q->id = ida_simple_get(&blk_queue_ida, 0, 0, gfp_mask);
@@ -876,7 +871,6 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
 	q->backing_dev_info->name = "block";
 	q->node = node_id;
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	fg_bg_max_count_init(q);
 #endif
 	setup_timer(&q->backing_dev_info->laptop_mode_wb_timer,
@@ -1817,7 +1811,6 @@ void blk_init_request_from_bio(struct request *req, struct bio *bio)
 	if (bio->bi_opf & REQ_RAHEAD)
 		req->cmd_flags |= REQ_FAILFAST_MASK;
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	if (bio->bi_opf & REQ_FG)
 		req->cmd_flags |= REQ_FG;
 #endif
@@ -2319,7 +2312,7 @@ blk_qc_t submit_bio(struct bio *bio)
 			count_vm_events(PGPGOUT, count);
 #if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
 			iomonitor_update_vm_stats(PGPGOUT, count);
-#endif /*OPLUS_FEATURE_IOMONITOR*/
+#endif/*OPLUS_FEATURE_IOMONITOR*/
 		} else {
 			if (bio_flagged(bio, BIO_WORKINGSET))
 				workingset_read = true;
@@ -2327,12 +2320,9 @@ blk_qc_t submit_bio(struct bio *bio)
 			count_vm_events(PGPGIN, count);
 #if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
 			iomonitor_update_vm_stats(PGPGIN, count);
-#endif /*OPLUS_FEATURE_IOMONITOR*/
+#endif/*OPLUS_FEATURE_IOMONITOR*/
 		}
 
-#ifdef CONFIG_MTK_BLOCK_TAG
-		mtk_btag_pidlog_submit_bio(bio);
-#endif
 		if (unlikely(block_dump)) {
 			char b[BDEVNAME_SIZE];
 			printk(KERN_DEBUG "%s(%d): %s block %Lu on %s (%u sectors)\n",
@@ -2343,7 +2333,6 @@ blk_qc_t submit_bio(struct bio *bio)
 		}
 	}
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	if (high_prio_for_task(current))
 		bio->bi_opf |= REQ_FG;
 #endif
@@ -2642,7 +2631,6 @@ struct request *blk_peek_request(struct request_queue *q)
 #if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
 			rq->req_td = ktime_get();
 #endif /*OPLUS_FEATURE_IOMONITOR*/
-
 			trace_block_rq_issue(q, rq);
 		}
 
@@ -2718,8 +2706,8 @@ static void blk_dequeue_request(struct request *rq)
 
 	list_del_init(&rq->queuelist);
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
-	list_del_init(&rq->fg_list);
+	if (sysctl_fg_io_opt && (rq->cmd_flags & REQ_FG))
+		list_del_init(&rq->fg_list);
 #endif
 	/*
 	 * the time frame between a request being removed from the lists
@@ -2730,12 +2718,10 @@ static void blk_dequeue_request(struct request *rq)
 		q->in_flight[rq_is_sync(rq)]++;
 		set_io_start_time_ns(rq);
 	}
-#ifdef OPLUS_FEATURE_HEALTHINFO
+#if defined(OPLUS_FEATURE_HEALTHINFO) && defined(CONFIG_OPLUS_HEALTHINFO)
 // Add for ioqueue
-#ifdef CONFIG_OPLUS_HEALTHINFO
 	ohm_ioqueue_add_inflight(q, rq);
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+#endif /*OPLUS_FEATURE_HEALTHINFO*/
 }
 
 /**

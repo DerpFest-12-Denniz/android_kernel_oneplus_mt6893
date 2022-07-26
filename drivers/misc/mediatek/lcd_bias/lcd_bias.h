@@ -4,10 +4,12 @@
  ** File: lcd_bias.h
  ** Description: Source file for LCD bias
  **          To Control LCD bias voltage
- ** Version :1.0
+ ** Version:1.0
  ** Date : 2018/10/03
+ ** Author: Liyan@ODM_HQ.Multimedia.LCD
  ** ---------------- Revision History: --------------------------
  ** <version>    <date>          < author >              <desc>
+ **  1.0           2018/10/03   Liyan@ODM_HQ   Source file for LCD bias
  ********************************************/
 
 #ifndef _LCD_BIAS_H
@@ -56,7 +58,7 @@
 #else
 
 #define LCD_BIAS_PRINT printk
-//#define LCD_BIAS_PRINT(fmt, args...)  pr_debug("[KERNEL/"LOG_TAG"]"fmt, ##args)
+/* #define LCD_BIAS_PRINT(fmt, args...)  pr_debug("[KERNEL/"LOG_TAG"]"fmt, ##args) */
 
 /* DTS state */
 typedef enum {

@@ -41,7 +41,7 @@
 #include <linux/i2c-dev.h>
 //#include "lcm_i2c.h"
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
-#include "../mediatek/mtk_corner_pattern/mtk_data_hw_roundedpattern.h"
+#include "../mediatek/mtk_corner_pattern/oplus19131_data_hw_roundedpattern.h"
 #endif
 
 /* #ifdef OPLUS_BUG_STABILITY */
@@ -50,10 +50,12 @@
 
 #define AVDD_REG 0x00
 #define AVDD_REG 0x01
+#define MAX_NORMAL_BRIGHTNESS   2047
 
 /* i2c control start */
 #define LCM_I2C_ID_NAME "I2C_LCD_BIAS"
 static struct i2c_client *_lcm_i2c_client;
+extern unsigned long oplus_max_normal_brightness;
 
 /*****************************************************************************
  * Function Prototype
@@ -596,7 +598,10 @@ static struct mtk_panel_params ext_params = {
 		.pll_clk = 550,
 		.hfp = 274,
 		.vfp = 1291,
+		.data_rate = 1100,
 	},
+	.vendor = "NT36672C_TM",
+	.manufacture = "tm2048",
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
 	.round_corner_en = 1,
 	.corner_pattern_height = ROUND_CORNER_H_TOP,
@@ -624,7 +629,10 @@ static struct mtk_panel_params ext_params_90hz = {
 		.pll_clk = 550,
 		.hfp = 274,
 		.vfp = 54,
+		.data_rate = 1100,
 	},
+	.vendor = "NT36672C_TM",
+	.manufacture = "tm2048",
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
 	.round_corner_en = 1,
 	.corner_pattern_height = ROUND_CORNER_H_TOP,
@@ -724,7 +732,7 @@ static struct mtk_panel_funcs ext_funcs = {
 	.ext_param_get = mtk_panel_ext_param_get,
 	.panel_poweron = lcm_panel_poweron,
 	.panel_poweroff = lcm_panel_poweroff,
-	/* .cabc_switch = cabc_switch, */
+	.cabc_switch = cabc_switch,
 };
 #endif
 
@@ -890,6 +898,7 @@ static int tianma_probe(struct mipi_dsi_device *dsi)
 	}
 #endif
 	register_device_proc("lcd", "NT36672C_TM", "tm2048");
+	oplus_max_normal_brightness = MAX_NORMAL_BRIGHTNESS;
 /* #ifdef OPLUS_BUG_STABILITY */
     ctx->is_normal_mode = true;
     if( META_BOOT == get_boot_mode() || FACTORY_BOOT == get_boot_mode() )

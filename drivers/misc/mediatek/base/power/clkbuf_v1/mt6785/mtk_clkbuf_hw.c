@@ -26,6 +26,7 @@
 #include <mt-plat/mtk_boot.h>
 //#include <mt-plat/upmu_common.h>
 #include <linux/string.h>
+#include <linux/delay.h>
 
 static void __iomem *pwrap_base;
 
@@ -199,14 +200,16 @@ unsigned int __attribute__((weak))
 
 static void pmic_clk_buf_ctrl_ext(short on)
 {
-	if (on)
+	if (on) {
 		pmic_config_interface(PMIC_DCXO_CW09_SET_ADDR, 0x1,
 				      PMIC_XO_EXTBUF7_EN_M_MASK,
 				      PMIC_XO_EXTBUF7_EN_M_SHIFT);
-	else
+		udelay(400);
+	} else {
 		pmic_config_interface(PMIC_DCXO_CW09_CLR_ADDR, 0x1,
 				      PMIC_XO_EXTBUF7_EN_M_MASK,
 				      PMIC_XO_EXTBUF7_EN_M_SHIFT);
+	}
 }
 
 void clk_buf_ctrl_bblpm_hw(short on)
@@ -800,6 +803,32 @@ bool clk_buf_ctrl(enum clk_buf_id id, bool onoff)
 }
 EXPORT_SYMBOL(clk_buf_ctrl);
 
+void clk_buf_disp_ctrl(bool onoff)
+{
+	if (onoff) {
+		pmic_config_interface(PMIC_DCXO_CW00_CLR,
+			      PMIC_XO_EXTBUF3_MODE_MASK,
+			      PMIC_XO_EXTBUF3_MODE_MASK,
+			      PMIC_XO_EXTBUF3_MODE_SHIFT);
+		pmic_config_interface(PMIC_DCXO_CW00_SET,
+			PMIC_XO_EXTBUF3_EN_M_MASK,
+			PMIC_XO_EXTBUF3_EN_M_MASK,
+			PMIC_XO_EXTBUF3_EN_M_SHIFT);
+		pmic_clk_buf_swctrl[XO_NFC] = 1;
+	} else {
+		pmic_config_interface(PMIC_DCXO_CW00_CLR,
+			PMIC_XO_EXTBUF3_MODE_MASK,
+			PMIC_XO_EXTBUF3_MODE_MASK,
+			PMIC_XO_EXTBUF3_MODE_SHIFT);
+		pmic_config_interface(PMIC_DCXO_CW00_CLR,
+			PMIC_XO_EXTBUF3_EN_M_MASK,
+			PMIC_XO_EXTBUF3_EN_M_MASK,
+			PMIC_XO_EXTBUF3_EN_M_SHIFT);
+		pmic_clk_buf_swctrl[XO_NFC] = 0;
+	}
+}
+EXPORT_SYMBOL(clk_buf_disp_ctrl);
+
 void clk_buf_dump_dts_log(void)
 {
 	pr_info("%s: CLK_BUF?_STATUS=%d %d %d %d %d %d %d\n", __func__,
@@ -1101,6 +1130,11 @@ static ssize_t clk_buf_show_status_info_internal(char *buf)
 
 u8 clk_buf_get_xo_en_sta(enum xo_id id)
 {
+	if (id < 0 || id >= XO_NUMBER)
+		return 0;
+
+	clk_buf_get_xo_en();
+
 	return xo_en_stat[id];
 }
 

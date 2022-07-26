@@ -225,6 +225,8 @@ static int mt6577_auxadc_read(struct iio_dev *indio_dev,
 	reg_channel = adc_dev->reg_base + MT6577_AUXADC_DAT0 +
 		      chan->channel * 0x04;
 
+	mutex_lock(&adc_dev->lock);
+
 	/* if auxadc suspend, DO NOT allow to read. */
 	if (atomic_read(&mt_auxadc_state) == 0) {
 		dev_err(indio_dev->dev.parent,
@@ -233,8 +235,6 @@ static int mt6577_auxadc_read(struct iio_dev *indio_dev,
 		mutex_unlock(&adc_dev->lock);
 		return -EPERM;
 	}
-
-	mutex_lock(&adc_dev->lock);
 
 	writel(1 << chan->channel, adc_dev->reg_base + MT6577_AUXADC_CON1_CLR);
 
@@ -356,7 +356,7 @@ static int __maybe_unused mt6577_auxadc_suspend(struct device *dev)
 	struct mt6577_auxadc_device *adc_dev = iio_priv(indio_dev);
 
 	mutex_lock(&adc_dev->lock);
-	
+
 	atomic_set(&mt_auxadc_state, 0);
 
 	mt6577_auxadc_mod_reg(adc_dev->reg_base + MT6577_AUXADC_MISC,
@@ -513,6 +513,7 @@ static int mt6577_auxadc_remove(struct platform_device *pdev)
 	struct mt6577_auxadc_device *adc_dev = iio_priv(indio_dev);
 
 	atomic_set(&mt_auxadc_state, 0);
+
 	iio_device_unregister(indio_dev);
 
 	mt6577_auxadc_mod_reg(adc_dev->reg_base + MT6577_AUXADC_MISC,

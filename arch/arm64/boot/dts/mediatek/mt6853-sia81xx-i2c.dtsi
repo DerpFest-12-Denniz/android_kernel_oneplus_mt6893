@@ -17,7 +17,13 @@
 	audio_extern_config = <2>;
 };
 
- * Modify for sia I2C & gpio config */
+//#ifdef OPLUS_ARCH_EXTENDS
+&sia81xx_L{
+	si,sia_boost_vol_support = <1>;
+};
+//endif
+
+/*OPLUS_ARCH_EXTENDS*/
 &i2c6 {
     #address-cells = <1>;
     #size-cells = <0>;
@@ -29,4 +35,5 @@
         si,sia81xx-dev = <&sia81xx_L>;
     };
 };
+/*OPLUS_ARCH_EXTENDS*/
 

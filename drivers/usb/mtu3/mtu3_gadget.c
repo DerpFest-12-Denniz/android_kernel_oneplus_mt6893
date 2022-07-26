@@ -19,6 +19,9 @@
 #include "mtu3.h"
 #include "mtu3_dr.h"
 #include <linux/usb/composite.h>
+#ifdef CONFIG_USB_MTU3_PLAT_PHONE
+#include <mt-plat/mtk_boot.h>
+#endif
 
 void mtu3_req_complete(struct mtu3_ep *mep,
 		     struct usb_request *req, int status)
@@ -348,12 +351,20 @@ struct usb_request *mtu3_alloc_request(struct usb_ep *ep, gfp_t gfp_flags)
 void mtu3_free_request(struct usb_ep *ep, struct usb_request *req)
 {
 	struct mtu3_ep *mep = to_mtu3_ep(ep);
-	struct mtu3 *mtu = mep->mtu;
+	struct mtu3_request *mreq = to_mtu3_request(req);
+        struct mtu3_request *r;
+        struct mtu3 *mtu = mep->mtu;
 	unsigned long flags;
 
 	spin_lock_irqsave(&mtu->lock, flags);
-	kfree(to_mtu3_request(req));
-	spin_unlock_irqrestore(&mtu->lock, flags);
+	list_for_each_entry(r, &mep->req_list, list) {
+                if (r == mreq) {
+                        list_del(&mreq->list);
+                break;
+                }
+        }
+        kfree(mreq);
+        spin_unlock_irqrestore(&mtu->lock, flags);
 }
 
 static int mtu3_gadget_queue(struct usb_ep *ep,
@@ -618,25 +629,17 @@ static int mtu3_gadget_pullup(struct usb_gadget *gadget, int is_on)
 		set_usb_rdy();
 
 	spin_unlock_irqrestore(&mtu->lock, flags);
-#if defined(ADB_DEVICE_MTK_6785) || defined(CONFIG_OPLUS_CHARGER_MTK6769)
-	//#ifdef CONFIG_USB_MTU3_PLAT_PHONE
-	/* Trigger connection when force on*/
-	//if (mtu3_cable_mode == CABLE_MODE_FORCEON) {
-		dev_err(mtu->dev, "%s CABLE_MODE_FORCEON\n", __func__);
-		ssusb_set_mailbox(&mtu->ssusb->otg_switch,
-			MTU3_VBUS_VALID);
-	//}
-	//#endif
-#else
 	#ifdef CONFIG_USB_MTU3_PLAT_PHONE
 	/* Trigger connection when force on*/
-	if (mtu3_cable_mode == CABLE_MODE_FORCEON) {
-		dev_info(mtu->dev, "%s CABLE_MODE_FORCEON\n", __func__);
+	if ((mtu3_cable_mode == CABLE_MODE_FORCEON) ||
+		(get_boot_mode() == META_BOOT) ||
+		(get_boot_mode() == ADVMETA_BOOT)) {
+		dev_info(mtu->dev, "%s CABLE_MODE_FORCEON or META_MODE\n",
+			__func__);
 		ssusb_set_mailbox(&mtu->ssusb->otg_switch,
 			MTU3_VBUS_VALID);
 	}
 	#endif
-#endif
 
 	return 0;
 }

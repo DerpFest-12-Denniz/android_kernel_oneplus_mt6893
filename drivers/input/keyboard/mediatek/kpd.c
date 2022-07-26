@@ -17,7 +17,7 @@
 #define DEBUG 1
 
 #include "kpd.h"
-#ifdef CONFIG_PM_WAKELOCKS
+#ifdef CONFIG_PM_SLEEP
 #include <linux/pm_wakeup.h>
 #else
 #include <linux/wakelock.h>
@@ -29,7 +29,7 @@
 #include <linux/debugfs.h>
 #include <linux/pinctrl/consumer.h>
 
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#ifdef OPLUS_FEATURE_TP_BASIC
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
@@ -50,7 +50,7 @@ struct timer_list Long_press_key_timer;
 atomic_t vol_down_long_press_flag = ATOMIC_INIT(0);
 #endif
 //#ifdef OPLUS_FEATURE_TP_BASIC
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#define KPD_HOME_NAME 		"mtk-kpd-home"
 #define KPD_VOL_UP_NAME		"mtk-kpd-vol-up"
 #define KPD_VOL_DOWN_NAME	"mtk-kpd-vol-down"
@@ -280,7 +280,7 @@ static u32 kpd_keymap[KPD_NUM_KEYS];
 static u16 kpd_keymap_state[KPD_NUM_MEMS];
 
 struct input_dev *kpd_input_dev;
-#ifdef CONFIG_PM_WAKELOCKS
+#ifdef CONFIG_PM_SLEEP
 struct wakeup_source kpd_suspend_lock;
 #else
 struct wake_lock kpd_suspend_lock;
@@ -381,16 +381,6 @@ static int kpd_delete_attr(struct device_driver *driver)
 }
 #endif
 /*----------------------------------------------------------------------------*/
-/* for autotest */
-#if KPD_AUTOTEST
-static const u16 kpd_auto_keymap[] = {
-	KEY_MENU,
-	KEY_HOME, KEY_BACK,
-	KEY_CALL, KEY_ENDCALL,
-	KEY_VOLUMEUP, KEY_VOLUMEDOWN,
-	KEY_FOCUS, KEY_CAMERA,
-};
-#endif
 /* for AEE manual dump */
 #define AEE_VOLUMEUP_BIT	0
 #define AEE_VOLUMEDOWN_BIT	1
@@ -460,7 +450,7 @@ static inline void kpd_update_aee_state(void)
 #endif
 	}
 }
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 static void kpd_aee_handler(u32 keycode, u16 pressed)
 {
 	if (pressed) {
@@ -547,7 +537,7 @@ void kpd_pmic_rstkey_handler(unsigned long pressed)
 	kpd_aee_handler(KPD_PMIC_RSTKEY_MAP, pressed);
 #endif
 
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#ifdef OPLUS_FEATURE_TP_BASIC
 if(vol_key_info.homekey_as_vol_up) {
 	kpd_set_vol_key_state(kpd_dts_data.kpd_sw_rstkey, !pressed);
@@ -569,7 +559,7 @@ static void kpd_keymap_handler(unsigned long data)
 	void *dest;
 
 	kpd_get_keymap_state(new_state);
-#ifdef CONFIG_PM_WAKELOCKS
+#ifdef CONFIG_PM_SLEEP
 	__pm_wakeup_event(&kpd_suspend_lock, 500);
 #else
 	wake_lock_timeout(&kpd_suspend_lock, HZ / 2);
@@ -687,7 +677,7 @@ void kpd_get_dts_info(struct device_node *node)
 				kpd_dts_data.kpd_sw_rstkey);
 }
 
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#ifdef OPLUS_FEATURE_TP_BASIC
 static int kpd_request_named_gpio(struct vol_info *kpd,
 		const char *label, int *gpio)
@@ -918,7 +908,7 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 	struct clk *kpd_clk = NULL;
         u32 i;
         int32_t err = 0;
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#ifdef OPLUS_FEATURE_TP_BASIC
 	struct device *dev = &pdev->dev;
 	struct vol_info *kpd_oplus;
@@ -1003,10 +993,8 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 		kpd_notice("register input device failed (%d)\n", err);
 		return err;
 	}
-#ifdef CONFIG_PM_WAKELOCKS
+#ifdef CONFIG_PM_SLEEP
 	wakeup_source_init(&kpd_suspend_lock, "kpd wakelock");
-#else
-	wake_lock_init(&kpd_suspend_lock, WAKE_LOCK_SUSPEND, "kpd wakelock");
 #endif
 	/* register IRQ and EINT */
 	kpd_set_debounce(kpd_dts_data.kpd_key_debounce);
@@ -1017,6 +1005,10 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 		input_unregister_device(kpd_input_dev);
 		return err;
 	}
+
+	if (enable_irq_wake(kp_irqnr) < 0)
+		kpd_notice("irq %d enable irq wake fail\n", kp_irqnr);
+
 #ifdef CONFIG_MTK_MRDUMP_KEY
 	mt_eint_register();
 #endif
@@ -1025,7 +1017,6 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 #endif
 	hrtimer_init(&aee_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	aee_timer.function = aee_timer_func;
-
 #if AEE_ENABLE_5_15
 	hrtimer_init(&aee_timer_5s, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	aee_timer_5s.function = aee_timer_5s_func;
@@ -1036,7 +1027,7 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 		kpd_delete_attr(&kpd_pdrv.driver);
 		return err;
 	}
-#ifndef CONFIG_MACH_MT6768
+#ifndef CONFIG_MACH_MT6768_BAK
 //#ifdef OPLUS_FEATURE_TP_BASIC
 	kpd_oplus->dev = dev;
 	dev_set_drvdata(dev, kpd_oplus);

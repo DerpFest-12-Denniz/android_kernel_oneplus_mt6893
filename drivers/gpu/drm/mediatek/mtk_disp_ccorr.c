@@ -28,7 +28,6 @@
 #include "mtk_log.h"
 #include "mtk_dump.h"
 #include "mtk_drm_helper.h"
-#include "mtk_drm_trace.h"
 
 #ifdef CONFIG_LEDS_MTK_DISP
 #include <mtk_leds_drv.h>
@@ -61,12 +60,7 @@
 #define CCORR_CLIP(val, min, max) ((val >= max) ? \
 	max : ((val <= min) ? min : val))
 
-extern unsigned long oplus_display_brightness;
-
 static unsigned int g_ccorr_relay_value[DISP_CCORR_TOTAL];
-static unsigned int g_reg_ccorr_inten_value;
-
-unsigned int g_faker_backlight;
 #define index_of_ccorr(module) ((module == DDP_COMPONENT_CCORR0) ? 0 : 1)
 
 static bool bypass_color0, bypass_color1;
@@ -102,6 +96,12 @@ static int g_old_pq_backlight;
 static int g_pq_backlight;
 static int g_pq_backlight_db;
 static atomic_t g_ccorr_is_init_valid = ATOMIC_INIT(0);
+#ifdef OPLUS_BUG_STABILITY
+extern unsigned long oplus_display_brightness;
+#if defined(OPLUS_BUG_STABILITY) && defined(CONFIG_LEDS_MTK_DISP)
+extern int oplus_disp_ccorr_without_gamma;
+#endif
+#endif
 
 static DEFINE_MUTEX(g_ccorr_global_lock);
 // For color conversion bug fix
@@ -161,7 +161,7 @@ static void disp_ccorr_multiply_3x3(unsigned int ccorrCoef[3][3],
 	}
 
 	for (i = 0; i < 3; i += 1) {
-		DDPDBG("signedCcorrCoef[%d][0-2] = {%d, %d, %d}\n", i,
+		DDPINFO("signedCcorrCoef[%d][0-2] = {%d, %d, %d}\n", i,
 			signedCcorrCoef[i][0],
 			signedCcorrCoef[i][1],
 			signedCcorrCoef[i][2]);
@@ -213,7 +213,7 @@ static void disp_ccorr_multiply_3x3(unsigned int ccorrCoef[3][3],
 	resultCoef[2][2] = CCORR_CLIP(temp_Result, -2048, 2047) & 0xFFF;
 
 	for (i = 0; i < 3; i += 1) {
-		DDPDBG("resultCoef[%d][0-2] = {0x%x, 0x%x, 0x%x}\n", i,
+		DDPINFO("resultCoef[%d][0-2] = {0x%x, 0x%x, 0x%x}\n", i,
 			resultCoef[i][0],
 			resultCoef[i][1],
 			resultCoef[i][2]);
@@ -267,7 +267,8 @@ static int disp_ccorr_write_coef_reg(struct mtk_ddp_comp *comp,
 
 #if defined(CONFIG_MACH_MT6885) || defined(CONFIG_MACH_MT6873) \
 	|| defined(CONFIG_MACH_MT6893) || defined(CONFIG_MACH_MT6853) \
-	|| defined(CONFIG_MACH_MT6833)
+	|| defined(CONFIG_MACH_MT6833) || defined(CONFIG_MACH_MT6877) \
+	|| defined(CONFIG_MACH_MT6781)
 	// For 6885 need to left shift one bit
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 3; j++)
@@ -370,7 +371,6 @@ void disp_ccorr_on_end_of_frame(struct mtk_ddp_comp *comp)
 			return;
 		}
 		intsta = readl(comp->regs + DISP_REG_CCORR_INTSTA);
-
 		DDPINFO("%s: intsta: 0x%x", __func__, intsta);
 
 		if (intsta & 0x2) {	/* End of frame */
@@ -378,11 +378,9 @@ void disp_ccorr_on_end_of_frame(struct mtk_ddp_comp *comp)
 			writel(intsta & ~0x3, comp->regs
 				+ DISP_REG_CCORR_INTSTA);
 
-			if (index == 0) {
-				atomic_set(&g_ccorr_get_irq, 1);
-				DDPPR_ERR("%s: wakeup get_irq_wq\n", __func__);
-				wake_up_interruptible(&g_ccorr_get_irq_wq);
-			}
+			atomic_set(&g_ccorr_get_irq, 1);
+
+			wake_up_interruptible(&g_ccorr_get_irq_wq);
 		}
 		DDPDBG("%s @ %d......... [IRQ] spin_unlock_irqrestore ++ ",
 			__func__, __LINE__);
@@ -401,17 +399,11 @@ static void disp_ccorr_set_interrupt(struct mtk_ddp_comp *comp,
 	if (default_comp == NULL)
 		default_comp = comp;
 
-	if (enabled && (g_reg_ccorr_inten_value & 0x2))
-		return;
-	else if (!enabled && !(g_reg_ccorr_inten_value & 0x2))
-		return;
-	else {
-		if (!enabled && (g_old_pq_backlight != g_pq_backlight))
-			g_old_pq_backlight = g_pq_backlight;
-		else
-			mtk_crtc_user_cmd(&(comp->mtk_crtc->base), comp,
-				SET_INTERRUPT, &enabled);
-	}
+	if (!enabled && (g_old_pq_backlight != g_pq_backlight))
+		g_old_pq_backlight = g_pq_backlight;
+	else
+		mtk_crtc_user_cmd(&(comp->mtk_crtc->base), comp,
+			SET_INTERRUPT, &enabled);
 }
 
 static void disp_ccorr_clear_irq_only(struct mtk_ddp_comp *comp)
@@ -470,7 +462,6 @@ static void disp_ccorr_clear_irq_only(struct mtk_ddp_comp *comp)
 		{
 			/* Disable output frame end interrupt */
 			writel(0x0, comp->regs + DISP_REG_CCORR_INTEN);
-			g_reg_ccorr_inten_value = 0x0;
 			DDPINFO("%s: Interrupt disabled\n", __func__);
 		}
 			spin_unlock_irqrestore(&g_ccorr_clock_lock, flags);
@@ -545,26 +536,32 @@ void disp_pq_notify_backlight_changed(int bl_1024)
 	if (atomic_read(&g_ccorr_is_init_valid) != 1)
 		return;
 
-	DDPPR_ERR("%s: %d,irqen=%d,old_bl=%d,pq_bl=%d\n", __func__, bl_1024, 
-		g_reg_ccorr_inten_value, g_old_pq_backlight, g_pq_backlight);
+	DDPINFO("%s: %d\n", __func__, bl_1024);
 
-	if (m_new_pq_persist_property[DISP_PQ_SILKY_BRIGHTNESS]) {
-		DDPDBG("%s: SILKY_BRIGHTNESS OPEN\n", __func__);
-		if (default_comp != NULL) {
+	if (m_new_pq_persist_property[DISP_PQ_CCORR_SILKY_BRIGHTNESS]) {
+		if (default_comp != NULL
+			/*#ifdef OPLUS_BUG_STABILITY*/
+			/* to keep value of backlight for FOD while screen is turning on*/
+			/* && g_ccorr_relay_value[index_of_ccorr(default_comp->id)] != 1 */
+			/*#endif OPLUS_BUG_STABILITY*/
+			) {
 			disp_ccorr_set_interrupt(default_comp, 1);
 
-			if (default_comp != NULL && default_comp->mtk_crtc != NULL)
-				mtk_crtc_check_trigger(default_comp->mtk_crtc, false, true);
+			if (default_comp != NULL &&
+					default_comp->mtk_crtc != NULL)
+				mtk_crtc_check_trigger(default_comp->mtk_crtc, false,
+					true);
 
 			DDPINFO("%s: trigger refresh when backlight changed", __func__);
 		}
 	} else {
-		DDPDBG("%s: SILKY_BRIGHTNESS CLOSE\n", __func__);
 		if (default_comp != NULL && (g_old_pq_backlight == 0 || bl_1024 == 0)) {
 			disp_ccorr_set_interrupt(default_comp, 1);
 
-			if (default_comp != NULL && default_comp->mtk_crtc != NULL)
-				mtk_crtc_check_trigger(default_comp->mtk_crtc, false, true);
+			if (default_comp != NULL &&
+					default_comp->mtk_crtc != NULL)
+				mtk_crtc_check_trigger(default_comp->mtk_crtc, false,
+					true);
 
 			DDPINFO("%s: trigger refresh when backlight ON/Off", __func__);
 		}
@@ -657,12 +654,10 @@ static int mtk_disp_ccorr_set_interrupt(struct mtk_ddp_comp *comp, void *data)
 		}
 		/* Enable output frame end interrupt */
 		writel(0x2, comp->regs + DISP_REG_CCORR_INTEN);
-		g_reg_ccorr_inten_value = 0x2;
 		DDPINFO("%s: Interrupt enabled\n", __func__);
 	} else {
 		/* Disable output frame end interrupt */
 		writel(0x0, comp->regs + DISP_REG_CCORR_INTEN);
-		g_reg_ccorr_inten_value = 0x0;
 		DDPINFO("%s: Interrupt disabled\n", __func__);
 	}
 	spin_unlock_irqrestore(&g_ccorr_clock_lock, flags);
@@ -675,7 +670,11 @@ int disp_ccorr_set_color_matrix(struct mtk_ddp_comp *comp,
 {
 	int ret = 0;
 	int i, j;
+	#if defined(OPLUS_BUG_STABILITY) && defined(CONFIG_LEDS_MTK_DISP)
+	int ccorr_without_gamma = oplus_disp_ccorr_without_gamma;
+	#else
 	int ccorr_without_gamma = 0;
+	#endif
 	bool need_refresh = false;
 	bool identity_matrix = true;
 	int id = index_of_ccorr(comp->id);
@@ -760,7 +759,8 @@ int disp_ccorr_set_color_matrix(struct mtk_ddp_comp *comp,
 
 #if defined(CONFIG_MACH_MT6885) || defined(CONFIG_MACH_MT6873) \
 	|| defined(CONFIG_MACH_MT6893) || defined(CONFIG_MACH_MT6853) \
-	|| defined(CONFIG_MACH_MT6833)
+	|| defined(CONFIG_MACH_MT6833) || defined(CONFIG_MACH_MT6877) \
+	|| defined(CONFIG_MACH_MT6781)
 	// offset part
 	if ((matrix[12] != 0) || (matrix[13] != 0) || (matrix[14] != 0))
 		need_offset = true;
@@ -832,7 +832,21 @@ int disp_ccorr_set_RGB_Gain(struct mtk_ddp_comp *comp,
 	g_rgb_matrix[2][2] = b;
 
 	DDPINFO("%s: r[%d], g[%d], b[%d]", __func__, r, g, b);
-	ret = disp_ccorr_write_coef_reg(comp, NULL, 0);
+	#if defined(OPLUS_BUG_STABILITY) && defined(CONFIG_LEDS_MTK_DISP)
+	if (oplus_disp_ccorr_without_gamma == 1)
+		g_disp_ccorr_without_gamma = oplus_disp_ccorr_without_gamma;
+	#endif
+	ret = disp_ccorr_write_coef_reg(comp, handle, 0);
+
+	if (comp->mtk_crtc->is_dual_pipe) {
+		struct mtk_drm_crtc *mtk_crtc = comp->mtk_crtc;
+		struct drm_crtc *crtc = &mtk_crtc->base;
+		struct mtk_drm_private *priv = crtc->dev->dev_private;
+		struct mtk_ddp_comp *comp_ccorr1 = priv->ddp_comp[DDP_COMPONENT_CCORR1];
+
+		disp_ccorr_write_coef_reg(comp_ccorr1, handle, 0);
+	}
+
 	mutex_unlock(&g_ccorr_global_lock);
 
 	return ret;
@@ -845,27 +859,28 @@ int mtk_drm_ioctl_set_ccorr(struct drm_device *dev, void *data,
 	struct mtk_ddp_comp *comp = private->ddp_comp[DDP_COMPONENT_CCORR0];
 	struct drm_crtc *crtc = private->crtc[0];
 
-	if (m_new_pq_persist_property[DISP_PQ_SILKY_BRIGHTNESS]) {
+	if (m_new_pq_persist_property[DISP_PQ_CCORR_SILKY_BRIGHTNESS]) {
 		int ret;
 		struct DRM_DISP_CCORR_COEF_T *ccorr_config = data;
 
 		ret = mtk_crtc_user_cmd(crtc, comp, SET_CCORR, data);
-		DDPDBG("%s: SILKY_BRIGHTNESS OPEN,silky_bright_flag=%d,FinalBacklight=%d\n", 
-			__func__, ccorr_config->silky_bright_flag, ccorr_config->FinalBacklight);
+
 		if ((ccorr_config->silky_bright_flag) == 1 &&
 			ccorr_config->FinalBacklight != 0) {
 			DDPINFO("brightness = %d, silky_bright_flag = %d",
 				ccorr_config->FinalBacklight,
 				ccorr_config->silky_bright_flag);
+			#ifdef OPLUS_BUG_STABILITY
 			oplus_display_brightness = ccorr_config->FinalBacklight;
+			#endif
 			mt_leds_brightness_set("lcd-backlight",
-						ccorr_config->FinalBacklight);
+				ccorr_config->FinalBacklight);
 		}
-		mtk_crtc_check_trigger(comp->mtk_crtc, false, false);
+
+		mtk_crtc_check_trigger(comp->mtk_crtc, false, true);
 
 		return ret;
 	} else {
-		DDPDBG("%s: SILKY_BRIGHTNESS CLOSE\n", __func__);
 		return mtk_crtc_user_cmd(crtc, comp, SET_CCORR, data);
 	}
 }
@@ -883,8 +898,7 @@ int mtk_drm_ioctl_ccorr_eventctl(struct drm_device *dev, void *data,
 		mtk_crtc_check_trigger(comp->mtk_crtc, false, true);
 
 	//mtk_crtc_user_cmd(crtc, comp, EVENTCTL, data);
-	DDPPR_ERR("ccorr_eventctl, enabled=%d,g_reg_ccorr_inten_value=%d,old_bl=%d,pq_bl=%d\n", 
-		*enabled,g_reg_ccorr_inten_value,g_old_pq_backlight, g_pq_backlight);
+	DDPINFO("ccorr_eventctl, enabled = %d\n", *enabled);
 	disp_ccorr_set_interrupt(comp, *enabled);
 
 	return ret;
@@ -898,6 +912,7 @@ int mtk_drm_ioctl_ccorr_get_irq(struct drm_device *dev, void *data,
 	atomic_set(&g_ccorr_is_init_valid, 1);
 
 	disp_ccorr_wait_irq(dev, 60);
+
 	if (disp_pq_copy_backlight_to_user((int *) data) < 0) {
 		DDPPR_ERR("%s: failed", __func__);
 		ret = -EFAULT;
@@ -925,7 +940,8 @@ int mtk_drm_ioctl_support_color_matrix(struct drm_device *dev, void *data,
 
 #if defined(CONFIG_MACH_MT6885) || defined(CONFIG_MACH_MT6873) \
 	|| defined(CONFIG_MACH_MT6893) || defined(CONFIG_MACH_MT6853) \
-	|| defined(CONFIG_MACH_MT6833)
+	|| defined(CONFIG_MACH_MT6833) || defined(CONFIG_MACH_MT6877) \
+	 || defined(CONFIG_MACH_MT6781)
 	// Support matrix:
 	// AOSP is 4x3 matrix. Offset is located at 4th row (not zero)
 
@@ -1024,7 +1040,6 @@ static int mtk_ccorr_user_cmd(struct mtk_ddp_comp *comp,
 				return -EFAULT;
 			}
 		}
-
 	}
 	break;
 
@@ -1096,7 +1111,8 @@ static void mtk_ccorr_prepare(struct mtk_ddp_comp *comp)
 	}
 #else
 #if defined(CONFIG_MACH_MT6873) || defined(CONFIG_MACH_MT6853) \
-	|| defined(CONFIG_MACH_MT6833)
+	|| defined(CONFIG_MACH_MT6833) || defined(CONFIG_MACH_MT6877) \
+	|| defined(CONFIG_MACH_MT6781)
 	/* Bypass shadow register and read shadow register */
 	mtk_ddp_write_mask_cpu(comp, CCORR_BYPASS_SHADOW,
 		DISP_REG_CCORR_SHADOW, CCORR_BYPASS_SHADOW);
@@ -1203,8 +1219,9 @@ static int mtk_disp_ccorr_probe(struct platform_device *pdev)
 
 	if (!default_comp && comp_id == DDP_COMPONENT_CCORR0)
 		default_comp = &priv->ddp_comp;
+
 	if (!ccorr1_default_comp && comp_id == DDP_COMPONENT_CCORR1)
-    ccorr1_default_comp = &priv->ddp_comp;
+		ccorr1_default_comp = &priv->ddp_comp;
 
 	ret = mtk_ddp_comp_init(dev, dev->of_node, &priv->ddp_comp, comp_id,
 				&mtk_disp_ccorr_funcs);
@@ -1255,7 +1272,15 @@ static const struct mtk_disp_ccorr_data mt6853_ccorr_driver_data = {
 	.support_shadow = false,
 };
 
+static const struct mtk_disp_ccorr_data mt6877_ccorr_driver_data = {
+	.support_shadow = false,
+};
+
 static const struct mtk_disp_ccorr_data mt6833_ccorr_driver_data = {
+	.support_shadow = false,
+};
+
+static const struct mtk_disp_ccorr_data mt6781_ccorr_driver_data = {
 	.support_shadow = false,
 };
 
@@ -1268,8 +1293,12 @@ static const struct of_device_id mtk_disp_ccorr_driver_dt_match[] = {
 	  .data = &mt6873_ccorr_driver_data},
 	{ .compatible = "mediatek,mt6853-disp-ccorr",
 	  .data = &mt6853_ccorr_driver_data},
+	{ .compatible = "mediatek,mt6877-disp-ccorr",
+	  .data = &mt6877_ccorr_driver_data},
 	{ .compatible = "mediatek,mt6833-disp-ccorr",
 	  .data = &mt6833_ccorr_driver_data},
+	{ .compatible = "mediatek,mt6781-disp-ccorr",
+	  .data = &mt6781_ccorr_driver_data},
 	{},
 };
 

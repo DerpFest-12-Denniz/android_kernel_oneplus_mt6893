@@ -51,7 +51,6 @@ static int convert_prio(int prio)
 
 	return cpupri;
 }
-
 #if defined(OPLUS_FEATURE_SCHED_ASSIST)
 extern void drop_ux_task_cpus(struct task_struct *p, struct cpumask *lowest_mask);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
@@ -120,7 +119,7 @@ int cpupri_find(struct cpupri *cp, struct task_struct *p,
 				drop_ux_task_cpus(p, lowest_mask);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 #if defined (CONFIG_SCHED_WALT) && defined (OPLUS_FEATURE_SCHED_ASSIST)
-		 if (sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE)|| sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI)) && oplus_task_misfit(p, task_cpu(p)))
+		if (sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE)|| sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM)) && oplus_task_misfit(p, task_cpu(p)))
 			kick_min_cpu_from_mask(lowest_mask);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 

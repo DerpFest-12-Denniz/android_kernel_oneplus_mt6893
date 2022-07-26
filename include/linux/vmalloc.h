@@ -40,7 +40,6 @@ struct vm_struct {
 	phys_addr_t		phys_addr;
 	const void		*caller;
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_VMALLOC_DEBUG)
-	/* record the stack hash. */
 	unsigned int		hash;
 #endif
 };

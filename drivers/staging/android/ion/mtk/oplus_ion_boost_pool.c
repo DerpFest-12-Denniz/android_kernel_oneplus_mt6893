@@ -334,6 +334,7 @@ int boost_pool_shrink(struct ion_boost_pool *boost_pool,
 	if (boost_pool->tsk->pid == current->pid ||
 	    boost_pool->prefill_tsk->pid == current->pid)
 		return 0;
+
 	if (nr_to_scan == 0)
 		return ion_page_pool_shrink(pool, gfp_mask, 0);
 
@@ -352,6 +353,7 @@ void boost_pool_dec_high(struct ion_boost_pool *pool, int nr_pages)
 {
 	if (pool->prefill)
 		return;
+
 	if (unlikely(nr_pages < 0))
 		return;
 
@@ -493,7 +495,6 @@ static const struct file_operations boost_pool_proc_ops = {
 	.llseek         = seq_lseek,
 	.release        = single_release,
 };
-
 
 static int boost_pool_low_proc_show(struct seq_file *s, void *v)
 {

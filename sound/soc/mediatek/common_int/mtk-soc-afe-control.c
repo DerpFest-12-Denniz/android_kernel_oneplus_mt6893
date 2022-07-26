@@ -2774,13 +2774,10 @@ void Auddrv_DL1_Interrupt_Handler(void)
 }
 
 #ifdef CONFIG_OPLUS_FEATURE_KTV_V2_NONDAPM
- * add for KTV */
 
- * set offset as 1920 bytes which refers to 5ms */
 #define NOISE_OFFSET (1920)
 #define NOISE_MIN_OFFSET (480)
 
- * add 24bit limit for mixing sound and music to reduce noise */
 #define LIMIT_24BIT 8388608
 void ktv_data_mix(char *sourseFile1, char *sourseFile2, int32_t frames) // the third param is frame not byte
 {

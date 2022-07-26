@@ -108,6 +108,9 @@
 #include <linux/atalk.h>
 #include <net/busy_poll.h>
 #include <linux/errqueue.h>
+//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+#include <net/oplus_nwpower.h>
+//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 #ifdef CONFIG_NET_RX_BUSY_POLL
 unsigned int sysctl_net_busy_read __read_mostly;

@@ -43,11 +43,10 @@
 #define UFS_MTK_TW_AWAYS_ON
 
 static int ufstw_create_sysfs(struct ufsf_feature *ufsf, struct ufstw_lu *tw);
-static int ufstw_clear_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res);
-static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val);
-
 static int create_wbfn_enable(void);
 static void remove_wbfn_enable(void);
+static int ufstw_clear_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res);
+static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val);
 
 static inline void ufstw_lu_get(struct ufstw_lu *tw)
 {
@@ -216,14 +215,6 @@ static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val)
 	ufstw_lu_put(tw);
 	pm_runtime_put_sync(hba->dev);
 
-	switch(idn){
-		case QUERY_ATTR_IDN_TW_BUF_LIFETIME_EST:
-			ufsf_para.tw_lifetime = val;
-			break;
-		default:
-			break;
-	}
-
 	return 0;
 }
 
@@ -256,14 +247,6 @@ static int ufstw_set_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res)
 
 	TW_DEBUG(tw->ufsf, "tw_flag LUN(%d) [0x%.2X] %u", tw->lun, idn,
 		 *flag_res);
-
-	switch(idn){
-		case QUERY_FLAG_IDN_TW_EN:
-			ufsf_para.tw_enable = true;
-			break;
-		default:
-			break;
-	}
 
 	ufstw_lu_put(tw);
 	pm_runtime_put_sync(hba->dev);
@@ -301,14 +284,6 @@ static int ufstw_clear_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res)
 
 	TW_DEBUG(tw->ufsf, "tw_flag LUN(%d) [0x%.2X] %u", tw->lun, idn,
 		 *flag_res);
-
-	switch(idn){
-		case QUERY_FLAG_IDN_TW_EN:
-			ufsf_para.tw_enable = false;
-			break;
-		default:
-			break;
-	}
 
 	ufstw_lu_put(tw);
 	pm_runtime_put_sync(hba->dev);
@@ -739,7 +714,6 @@ int ufstw_get_lu_info(struct ufsf_feature *ufsf, unsigned int lun, u8 *lu_buf)
 		tw = ufsf->tw_lup[lun];
 		tw->ufsf = ufsf;
 		tw->lun = lun;
-		ufsf_para.buffer_size = lu_desc.tw_lu_buf_size;
 		INIT_INFO("tw_lu LUN(%d) [29:2C] dLUNumTurboWriteBufferAllocUnits %u",
 			  lun, lu_desc.tw_lu_buf_size);
 	} else {
@@ -1783,9 +1757,9 @@ static int ufstw_create_sysfs(struct ufsf_feature *ufsf, struct ufstw_lu *tw)
 static inline void wbfn_enable_ctrl(struct ufstw_lu *tw, long val)
 {
 
-	mutex_lock(&tw->mode_lock);
+	//mutex_lock(&tw->mode_lock);
 
-	if (atomic_read(&tw->tw_mode) == TW_MODE_MANUAL) {
+	//if (atomic_read(&tw->tw_mode) == TW_MODE_MANUAL) {
 		switch (val) {
 		case 0:
 			ufstw_clear_lu_flag(tw, QUERY_FLAG_IDN_TW_EN,
@@ -1798,9 +1772,9 @@ static inline void wbfn_enable_ctrl(struct ufstw_lu *tw, long val)
 		default:
 			break;
 		}
-	}
+	//}
 
-	mutex_unlock(&tw->mode_lock);
+	//mutex_unlock(&tw->mode_lock);
 	return;
 }
 
@@ -1808,7 +1782,8 @@ static ssize_t wbfn_enable_write(struct file *filp, const char *ubuf,
 				 size_t cnt, loff_t *data)
 {
 	char buf[64] = {0};
-	long val = 64;
+	long val = 0;
+	int ret = 0;
 	int lun;
 
 	if (!ufsf_para.ufsf)
@@ -1817,13 +1792,11 @@ static ssize_t wbfn_enable_write(struct file *filp, const char *ubuf,
 		return -EINVAL;
 	if (copy_from_user(&buf, ubuf, cnt))
 		return -EFAULT;
+	buf[cnt] = 0;
 
-	if (buf[0] == '0')
-		val = 0;
-	else if (buf[0] == '1')
-		val = 1;
-	else
-		val = 64;
+	ret = kstrtoul(buf, 0, (unsigned long *)&val);
+	if (ret < 0)
+		return ret;
 
 	seq_scan_lu(lun) {
 		if (ufsf_para.ufsf->tw_lup[lun])
@@ -1859,3 +1832,4 @@ static void remove_wbfn_enable(void)
 
 	return;
 }
+

@@ -679,7 +679,6 @@ static struct snd_soc_dai_link mt_soc_extspk_dai[] = {
 		.ops = &cs35l35_ops,
 #else
 #ifdef OPLUS_BUG_COMPATIBILITY
-		 * add TFA9890 ALSA driver for MT6763 */
 #ifdef CONFIG_SND_SOC_ALSACODEC_TFA9890
 		.codec_dai_name = "tfa98xx-aif-3-35",
 		.codec_name = "tfa98xx.3-0035",
@@ -796,9 +795,6 @@ static ssize_t ktvdev_write(struct file *fp, const char __user *data, size_t cou
 	}
 	spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
 
-	 * we do not need memset 0 value in this routine
-	 * because the voice data comes from UL.
-	 * Unnecessary memset 0 will cause consumption */
 
 	tmp = kmalloc(ktvUnitSize, GFP_KERNEL);
 	if (tmp == NULL) {
@@ -921,7 +917,6 @@ static int mt_soc_snd_probe(struct platform_device *pdev)
 #endif
 
 #ifdef CONFIG_OPLUS_FEATURE_KTV_V2_NONDAPM
-	 * add for KTV */
 	/* register KTV MISC device */
 	ret = misc_register(&ktvw_device);
 	if (ret) {

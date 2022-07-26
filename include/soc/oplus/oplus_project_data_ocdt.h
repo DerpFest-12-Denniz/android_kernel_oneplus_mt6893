@@ -52,6 +52,7 @@ enum {
     REBOOT_MODEM        = 0x28,
     REBOOT_ANDROID      = 0x29,
 //#if defined(PHOENIX_PROJECT) || defined(OPLUS_DOCTOR)
+    REBOOT_SBL_DDRTEST  = 0x2B,
     REBOOT_SBL_DDR_CUS  = 0x2C,
     REBOOT_AGINGTEST    = 0x2D,
     REBOOT_SBLTEST_FAIL = 0x2E,

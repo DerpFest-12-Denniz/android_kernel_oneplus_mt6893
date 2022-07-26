@@ -51,6 +51,7 @@ static int esd_brightness;
 static bool aod_state = false;
 extern unsigned long oplus_display_brightness;
 extern unsigned long oplus_max_normal_brightness;
+extern unsigned long aod_light_mode;
 //static int aod_finger_unlock_flag = 0;
 /*#ifdef OPLUS_FEATURE_TP_BASIC*/
 __attribute__((weak)) void lcd_tp_refresh_switch(int fps)
@@ -434,7 +435,7 @@ static void lcm_panel_init(struct lcm *ctx)
     lcm_dcs_write_seq_static(ctx,0xF3,0x00);
 
     lcm_dcs_write_seq_static(ctx,0xF0,0x55,0xAA,0x52,0x08,0x01);
-    lcm_dcs_write_seq_static(ctx, 0xC3,0x8D,0x01,0x9C,0xD0,0x20,0x01,0x00);
+    lcm_dcs_write_seq_static(ctx,0xC3,0x8D,0x01,0x96,0xD0,0x22,0x02,0x00);
     /* slove ELVDD drop*/
     lcm_dcs_write_seq_static(ctx,0x6F,0x01);
     lcm_dcs_write_seq_static(ctx,0xD2,0x01);
@@ -619,7 +620,7 @@ static const struct drm_display_mode performance_mode = {
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
 	.pll_clk = 209,
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -690,7 +691,7 @@ static struct mtk_panel_params ext_params = {
 
 static struct mtk_panel_params ext_params_90hz = {
 	.pll_clk = 300,
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
         .cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -780,6 +781,11 @@ static int mtk_panel_ext_param_set(struct drm_panel *panel,
 	int ret = 0;
 	struct drm_display_mode *m = get_mode_by_id(panel, mode);
 
+	if (!m) {
+		pr_err("%s, get mode failed\n", __func__);
+		return ret;
+	}
+
 	if (mode == 0)
 		ext->params = &ext_params;
 	else if (mode == 1)
@@ -809,7 +815,7 @@ static void mode_switch_60_to_90(struct drm_panel *panel,
 		lcm_dcs_write_seq_static(ctx, 0xF0,0x55,0xAA,0x52,0x08,0x01);
 		lcm_dcs_write_seq_static(ctx, 0x2F, 0x02);
 		usleep_range(20*1000, 21*1000);
-		lcm_dcs_write_seq_static(ctx, 0xC3,0x92,0x01,0x8E,0xD0,0x20,0x01,0x00);
+		lcm_dcs_write_seq_static(ctx, 0xC3,0x92,0x01,0x88,0xD0,0x22,0x02,0x00);
 		lcm_dcs_write_seq_static(ctx, 0x2C);
 	//} else if (stage == AFTER_CHANGE_DATARATE) {
 		//usleep_range(20*1000, 21*1000);
@@ -832,7 +838,7 @@ static void mode_switch_90_to_60(struct drm_panel *panel,
 		usleep_range(26*1000, 27*1000);
 	} else if (stage == AFTER_DSI_POWERON) {
 		lcm_dcs_write_seq_static(ctx, 0xF0,0x55,0xAA,0x52,0x08,0x01);
-		lcm_dcs_write_seq_static(ctx, 0xC3,0x8D,0x01,0x9C,0xD0,0x20,0x01,0x00);
+		lcm_dcs_write_seq_static(ctx, 0xC3,0x8D,0x01,0x96,0xD0,0x22,0x02,0x00);
 		lcm_dcs_write_seq_static(ctx, 0x2C);
 	//} else if (stage == AFTER_CHANGE_DATARATE) {
 		//usleep_range(20*1000, 21*1000);
@@ -924,7 +930,7 @@ static int panel_doze_disable(struct drm_panel *panel, void *dsi, dcs_write_gce 
 
 	/*if (oplus_fp_notify_down_delay)
 		aod_finger_unlock_flag = 1;*/
-
+	usleep_range(35*1000, 35*1000+100);
 	/* Switch back to VDO mode */
 	for (i = 0; i < (sizeof(lcm_aod_to_normal) / sizeof(struct LCM_setting_table)); i++) {
 		unsigned cmd;
@@ -990,7 +996,9 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
 
     {REGFLAG_CMD, 1, {0x35}},
     {REGFLAG_CMD, 2, {0x53,0x20}},
-    {REGFLAG_CMD, 5, {0x51,0x00,0x00,0x0F,0xFE}},
+    {REGFLAG_CMD, 2, {0x6F,0x02}},
+    {REGFLAG_CMD, 3, {0x51,0x0F,0xFE}},
+
     {REGFLAG_CMD, 5, {0x2A,0x00,0x00,0x04,0x37}},
     {REGFLAG_CMD, 5, {0x2B,0x00,0x00,0x09,0x5F}},
 
@@ -1008,6 +1016,22 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
     {REGFLAG_DELAY,120,{}},
     {REGFLAG_CMD, 1, {0x29}},
     //{REGFLAG_DELAY,20,{}},
+
+    {REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x00}},
+    {REGFLAG_CMD, 2, {0xC0,0x46}},
+    {REGFLAG_CMD, 2, {0x6F,0x01}},
+    {REGFLAG_CMD, 2, {0xC0,0xB3}},
+    {REGFLAG_CMD, 5, {0xFF,0xAA,0x55,0xA5,0x80}},
+    {REGFLAG_CMD, 2, {0x6F,0x2E}},
+    {REGFLAG_CMD, 2, {0xFB,0xD1}},
+    {REGFLAG_CMD, 2, {0x6F,0x61}},
+    {REGFLAG_CMD, 2, {0xF3,0x80}},
+
+    {REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x01}},
+    {REGFLAG_CMD, 2, {0x6F,0x02}},
+    {REGFLAG_CMD, 2, {0xD2,0x24}},
+    {REGFLAG_CMD, 2, {0x6F,0x06}},
+    {REGFLAG_CMD, 2, {0xD2,0x06}},
 
     //{REGFLAG_CMD, 1, {0x28}},
     {REGFLAG_CMD, 6, {0xF0,0x55,0xAA,0x52,0x08,0x00}},
@@ -1054,6 +1078,7 @@ static int panel_doze_enable(struct drm_panel *panel, void *dsi, dcs_write_gce c
 				cb(dsi, handle, lcm_normal_to_aod_sam[i].para_list, lcm_normal_to_aod_sam[i].count);
 		}
 	}
+	aod_light_mode = 0;
 
 	return 0;
 }
@@ -1112,7 +1137,8 @@ static int panel_doze_area_set(void *dsi, dcs_write_gce cb, void *handle)
 	return 0;
 }
 #endif
-static int panel_doze_post_disp_on(void *dsi, dcs_write_gce cb, void *handle)
+
+static int panel_doze_post_disp_on(struct drm_panel *panel, void *dsi, dcs_write_gce cb, void *handle)
 {
 
 	int cmd = 0;
@@ -1200,6 +1226,11 @@ static int lcm_panel_poweron(struct drm_panel *panel)
 		return 0;
 
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(5);
@@ -1290,7 +1321,6 @@ static int lcm_set_hbm(void *dsi, dcs_write_gce cb,
 		void *handle, unsigned int hbm_mode)
 {
 	int i = 0;
-	int level = 0;
 	if (!cb)
 		return -1;
 
@@ -1316,9 +1346,9 @@ static int panel_hbm_set_cmdq(struct drm_panel *panel, void *dsi,
 	//char hbm_tb[] = {0x53, 0xe0};
 	struct lcm *ctx = panel_to_lcm(panel);
 	int i = 0;
-	int level = 0;
 	if (!cb)
 		return -1;
+
 	if (ctx->hbm_en == en)
 		goto done;
 
@@ -1623,6 +1653,11 @@ static int lcm_probe(struct mipi_dsi_device *dsi)
 			return -EPROBE_DEFER;
 	}
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(2);

@@ -66,6 +66,7 @@ static int aod_finger_unlock_flag = 0;
 extern unsigned long oplus_display_brightness;
 extern unsigned long oplus_max_normal_brightness;
 extern unsigned long seed_mode;
+extern unsigned int aod_light_mode;
 
 /*#ifdef OPLUS_FEATURE_TP_BASIC*/
 __attribute__((weak)) void lcd_tp_refresh_switch(int fps)
@@ -89,6 +90,7 @@ __attribute__((weak)) void lcd_tp_refresh_switch(int fps)
 #define MAX_NORMAL_BRIGHTNESS   2047
 #define LCM_BRIGHTNESS_TYPE 2
 /*#ifdef OPLUS_BUG_STABILITY*/
+#define SILKY_MAX_NORMAL_BRIGHTNESS   8191
 #include "../oplus/oplus_display_panel_power.h"
 extern int oplus_export_drm_panel(struct drm_panel *panel_node);
 extern int fan53870_ldo1_regmap_read(void);
@@ -253,6 +255,104 @@ static struct LCM_setting_table lcm_normal_to_aod_sam[] = {
 	{REGFLAG_CMD,3,{0xF0, 0x5A,0x5A}},
 	{REGFLAG_CMD,2,{0x91, 0X01}},
 	{REGFLAG_CMD,2,{0x53, 0x24}},
+	{REGFLAG_CMD,2,{0xBB, 0x3D}},//0x1D
+	{REGFLAG_CMD,3,{0xF0, 0xA5,0xA5}},
+
+	/*seed Setting*/
+	/*{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,2,{0x5D,0x46}},
+	{REGFLAG_CMD,2,{0x62,0x00}},
+	{REGFLAG_CMD,3,{0xB0,0x16,0x62}},
+	{REGFLAG_CMD,22,{0x62, 0xE0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},*/
+	/* Image Data Write for AOD Mode */
+	/* Display on */
+	//{REGFLAG_CMD,1,{0x29}},
+	//{REGFLAG_CMD,1,{0x13}},
+	{REGFLAG_END_OF_TABLE, 0x00, {}}
+};
+
+static struct LCM_setting_table lcm_normal_to_aod_low_light_sam[] = {
+	/* DSC Setting */
+	{REGFLAG_CMD, 129, {0x9E, 0x11, 0x00, 0x00, 0x89, 0x30, 0x80, 0x09, 0x60, 0x04, 0x38,\
+					 0x00, 0x1E, 0x02, 0x1C, 0x02, 0x1C, 0x02, 0x00, 0x02, 0x0E,\
+					 0x00, 0x20, 0x02, 0xE3, 0x00, 0x07, 0x00, 0x0C, 0x03, 0x50,\
+					 0x03, 0x64, 0x18, 0x00, 0x10, 0xF0, 0x03, 0x0C, 0x20, 0x00,\
+					 0x06, 0x0B, 0x0B, 0x33, 0x0E, 0x1C, 0x2A, 0x38, 0x46, 0x54,\
+					 0x62, 0x69, 0x70, 0x77, 0x79, 0x7B, 0x7D, 0x7E, 0x01, 0x02,\
+					 0x01, 0x00, 0x09, 0x40, 0x09, 0xBE, 0x19, 0xFC, 0x19, 0xFA,\
+					 0x19, 0xF8, 0x1A, 0x38, 0x1A, 0x78, 0x1A, 0xB6, 0x2A, 0xF6,\
+					 0x2B, 0x34, 0x2B, 0x74, 0x3B, 0x74, 0x6B, 0xF4, 0x00, 0x00,\
+					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+	{REGFLAG_CMD,2,{0xC2,0x14}},
+	{REGFLAG_CMD,2,{0x9D,0x01}},
+
+	{REGFLAG_CMD,1,{0x11}},
+	{REGFLAG_DELAY,10,{}},
+	/* dcdc sm3010 power ctrl */
+	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,3,{0xB0,0x01,0x63}},
+	{REGFLAG_CMD,2,{0x63,0x13}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+	{REGFLAG_DELAY,125,{}},
+
+
+	/* TE vsync ON */
+	{REGFLAG_CMD, 2, {0x35, 0x00}},
+
+	/* CASET/PASET Setting */
+	{REGFLAG_CMD, 5, {0x2A, 0x00,0x00,0x04,0x37}},
+	{REGFLAG_CMD, 5, {0x2B, 0x00,0x00,0x09,0x5F}},
+
+	/*FQ CON Setting */
+	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,3,{0xB0,0x27,0xF2}},
+	{REGFLAG_CMD,2,{0xF2,0x00}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+
+	/*seed seeting*/
+/*	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,2,{0x5D,0x46}},
+	{REGFLAG_CMD,2,{0x62,0x00}},
+	{REGFLAG_CMD,3,{0xB0,0x16,0x62}},
+	{REGFLAG_CMD,22,{0x62, 0xE0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+*/
+	/*Frequency Change*/
+	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,3,{0x60,0x00,0x00}},
+	{REGFLAG_CMD,2,{0xF7,0x0F}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+
+	/* Backlight Dimming Setting */
+	{REGFLAG_CMD, 2, {0x55, 0x00}},
+
+	/* acl setting */
+	{REGFLAG_CMD, 2, {0x53, 0x20}},
+
+	/* Display On*/
+	//{REGFLAG_CMD, 1, {0x29}},
+
+	/* Display off*/
+	{REGFLAG_CMD, 1, {0x28}},
+	{REGFLAG_DELAY,17,{}},
+
+	/* hbm elvss update */
+	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,3,{0xB0, 0xB4, 0x63}},
+	{REGFLAG_CMD,12,{0x63, 0xD1, 0x0D, 0x7D, 0xDE, 0x8E, 0x53, 0xE8, 0xEF, 0x29, 0xF9, 0x4F}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+	/* aod ctrl setting */
+	{REGFLAG_CMD,3,{0xF0,0x5A,0x5A}},
+	{REGFLAG_CMD,3,{0xBB, 0x3D, 0x0C}},
+	{REGFLAG_CMD,3,{0xF0,0xA5,0xA5}},
+	/*AOD On*/
+	{REGFLAG_CMD,3,{0xF0, 0x5A,0x5A}},
+	{REGFLAG_CMD,2,{0x91, 0X01}},
+	{REGFLAG_CMD,2,{0x53, 0x25}},
 	{REGFLAG_CMD,2,{0xBB, 0x3D}},//0x1D
 	{REGFLAG_CMD,3,{0xF0, 0xA5,0xA5}},
 
@@ -773,7 +873,7 @@ static const struct drm_display_mode performance_mode = {
 
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.esd_two_para_compare = 1,
 	.lcm_esd_check_table[0] = {
@@ -827,6 +927,7 @@ static struct mtk_panel_params ext_params = {
 	.oplus_need_hbm_wait = 0,
 	.oplus_hbm_on_sync_with_flush = 0,
 	.oplus_hbm_off_sync_with_flush = 0,
+	.oplus_wait_te_num = 3,
 	.oplus_samsung_panel =0,
 	//before hbm need wait
 	.oplus_need_before_hbm_wait= 1,
@@ -857,7 +958,7 @@ static struct mtk_panel_params ext_params = {
 };
 
 static struct mtk_panel_params ext_params_90hz = {
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.esd_two_para_compare = 1,
 	.lcm_esd_check_table[0] = {
@@ -911,6 +1012,7 @@ static struct mtk_panel_params ext_params_90hz = {
 	.oplus_need_hbm_wait = 0,
 	.oplus_hbm_on_sync_with_flush = 0,
 	.oplus_hbm_off_sync_with_flush = 0,
+	.oplus_wait_te_num = 3,
 	.oplus_samsung_panel =0,
 	//before hbm need wait
 	.oplus_need_before_hbm_wait=1,
@@ -1114,25 +1216,52 @@ static int panel_doze_enable(struct drm_panel *panel, void *dsi, dcs_write_gce c
 	pr_err("debug for lcm %s\n", __func__);
 	aod_state = true;
 
-	for (i = 0; i < (sizeof(lcm_normal_to_aod_sam) / sizeof(struct LCM_setting_table)); i++) {
-		unsigned cmd;
-		cmd = lcm_normal_to_aod_sam[i].cmd;
+	/* normal aod light mode */
+	if (aod_light_mode == 0) {
+		pr_info("debug for %s normal aod light mode\n", __func__);
+		for (i = 0; i < (sizeof(lcm_normal_to_aod_sam) / sizeof(struct LCM_setting_table)); i++) {
+			unsigned cmd;
+			cmd = lcm_normal_to_aod_sam[i].cmd;
 
-		switch (cmd) {
+			switch (cmd) {
 
-			case REGFLAG_DELAY:
-				msleep(lcm_normal_to_aod_sam[i].count);
-				break;
+				case REGFLAG_DELAY:
+					msleep(lcm_normal_to_aod_sam[i].count);
+					break;
 
-			case REGFLAG_UDELAY:
-				udelay(lcm_normal_to_aod_sam[i].count);
-				break;
+				case REGFLAG_UDELAY:
+					udelay(lcm_normal_to_aod_sam[i].count);
+					break;
 
-			case REGFLAG_END_OF_TABLE:
-				break;
+				case REGFLAG_END_OF_TABLE:
+					break;
 
-			default:
-				cb(dsi, handle, lcm_normal_to_aod_sam[i].para_list, lcm_normal_to_aod_sam[i].count);
+				default:
+					cb(dsi, handle, lcm_normal_to_aod_sam[i].para_list, lcm_normal_to_aod_sam[i].count);
+			}
+		}
+	} else {
+		pr_info("debug for %s low aod light mode\n", __func__);
+		for (i = 0; i < (sizeof(lcm_normal_to_aod_low_light_sam) / sizeof(struct LCM_setting_table)); i++) {
+			unsigned cmd;
+			cmd = lcm_normal_to_aod_low_light_sam[i].cmd;
+
+			switch (cmd) {
+
+				case REGFLAG_DELAY:
+					msleep(lcm_normal_to_aod_low_light_sam[i].count);
+					break;
+
+				case REGFLAG_UDELAY:
+					udelay(lcm_normal_to_aod_low_light_sam[i].count);
+					break;
+
+				case REGFLAG_END_OF_TABLE:
+					break;
+
+				default:
+					cb(dsi, handle, lcm_normal_to_aod_low_light_sam[i].para_list, lcm_normal_to_aod_low_light_sam[i].count);
+			}
 		}
 	}
 
@@ -1798,7 +1927,9 @@ static int lcm_probe(struct mipi_dsi_device *dsi)
 #endif
 
 	ctx->hbm_en = false;
-	oplus_max_normal_brightness = MAX_NORMAL_BRIGHTNESS;
+    /*#ifdef OPLUS_BUG_STABILITY*/
+	oplus_max_normal_brightness = SILKY_MAX_NORMAL_BRIGHTNESS;
+    /*#endif OPLUS_BUG_STABILITY*/
 	pr_info("%s samsung lcm+\n", __func__);
 	register_device_proc("lcd", "AMS643YE05_SAMSUNG", "Samsung2048");
 	pr_info("%s-\n", __func__);

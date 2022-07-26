@@ -3742,7 +3742,6 @@ static int Audio_AmpR_Set(struct snd_kcontrol *kcontrol,
 }
 
 #ifdef OPLUS_BUG_COMPATIBILITY
- * add for HS Left Right control sperate */
 static int Headset_Left_Right_Set(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
@@ -4714,7 +4713,6 @@ static const struct snd_kcontrol_new Audio_snd_auxadc_controls[] = {
 };
 
 #ifdef OPLUS_BUG_COMPATIBILITY
- * add for HS Left Right control sperate */
 static const char *Headset_Left_Right_Setting[] = {"LeftOn",
 	"LeftOff", "RightOn","RightOff", "Both","None"};
 #endif /* OPLUS_BUG_COMPATIBILITY */
@@ -5297,7 +5295,6 @@ static const struct soc_enum Audio_DL_Enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dctrim_control_state),
 	dctrim_control_state),
 #ifdef OPLUS_BUG_COMPATIBILITY
-     * add for HS Left Right control sperate */
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(Headset_Left_Right_Setting), Headset_Left_Right_Setting),
 #endif /* OPLUS_BUG_COMPATIBILITY */
 };
@@ -5360,7 +5357,6 @@ static const struct snd_kcontrol_new mt6358_snd_controls[] = {
 		     disable_pmic_dctrim_set),
 #endif
 #ifdef OPLUS_BUG_COMPATIBILITY
-	 * add for HS Left Right control sperate */
 	SOC_ENUM_EXT("Headset_Left_Right_Sel", Audio_DL_Enum[14],
 		Headset_Left_Right_Get, Headset_Left_Right_Set),
 #endif /* OPLUS_BUG_COMPATIBILITY */
@@ -5417,7 +5413,6 @@ static bool TurnOnADcPowerACC(int ADCType, bool enable)
 			if (mCodec_data->ana_mux[MICSOURCE_MUX_IN_1] == 0) {
 				/* phone mic */
 #ifdef OPLUS_BUG_COMPATIBILITY
-				 * modify for changing micbias vol to 2.5V of main/sub/headset mic */
 				Ana_Set_Reg(AUDENC_ANA_CON9, 0x0051, 0xffff);
 #else /* OPLUS_BUG_COMPATIBILITY */
 				/* Enable MICBIAS0, MISBIAS0 = 1P9V */
@@ -5524,7 +5519,6 @@ static bool TurnOnADcPowerACC(int ADCType, bool enable)
 				/* headset mic */
 				/* Disable MICBIAS1 */
 #ifdef OPLUS_BUG_COMPATIBILITY
-				 * modify for changing micbias vol to 2.7V for headset mic not recording */
 				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0071, 0xffff);
 #endif /* OPLUS_BUG_COMPATIBILITY */
 				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0000, 0x0001);

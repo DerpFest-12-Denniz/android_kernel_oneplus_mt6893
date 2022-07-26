@@ -858,6 +858,8 @@ static int show_smap(struct seq_file *m, void *v)
 
 	smap_gather_stats(vma, &mss);
 
+
+
 	if (strcmp(current->comm, "android.bg") == 0) {
 		if ((unsigned long)(mss.pss >> (10 + PSS_SHIFT)) > 0) {
 			seq_printf(m,
@@ -877,6 +879,7 @@ static int show_smap(struct seq_file *m, void *v)
 		m_cache_vma(m, vma);
 		return 0;
 	}
+    //#endif /*OPLUS_BUG_STABILITY*/
 
 	show_map_vma(m, vma);
 	if (vma_get_anon_name(vma)) {

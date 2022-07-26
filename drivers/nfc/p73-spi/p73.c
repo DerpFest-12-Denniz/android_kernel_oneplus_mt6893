@@ -129,6 +129,7 @@ static struct regulator *p61_regulator = NULL;
 //#define P61_SPI_CLOCK_20Mzh
 //#else
 #define P61_SPI_CLOCK_8Mzh
+//#endif /* VENDOR_EDIT */
 
 #ifdef P61_SPI_CLOCK_13_3_Mzh
 //#define P61_SPI_CLOCK 13300000L;Further debug needed
@@ -195,6 +196,7 @@ struct p61_dev {
     /* read buffer */
     size_t kbuflen;
     u8 *kbuf;
+    //#endif /* VENDOR_EDIT */
 };
 
 /* T==1 protocol specific global data */
@@ -486,7 +488,9 @@ static ssize_t p61_dev_write(struct file *filp, const char *buf, size_t count,
     struct p61_dev *p61_dev;
     //Mod for buf for transceive SPI data
     //unsigned char tx_buffer[MAX_BUFFER_SIZE];
+    //#else /* VENDOR_EDIT */
     char *tmp = NULL;
+    //#endif /* VENDOR_EDIT */
 
     P61_DBG_MSG(KERN_ALERT "p61_dev_write -Enter count %d\n", count);
 
@@ -505,6 +509,7 @@ static ssize_t p61_dev_write(struct file *filp, const char *buf, size_t count,
         return -EFAULT;
     }
     */
+    //#else /* VENDOR_EDIT */
     tmp = memdup_user(buf, count);
     if (IS_ERR(tmp)) {
         pr_info("%s: memdup_user failed\n", __func__);
@@ -512,12 +517,15 @@ static ssize_t p61_dev_write(struct file *filp, const char *buf, size_t count,
         ret = PTR_ERR(tmp);
         return ret;
     }
+    //#endif /* VENDOR_EDIT */
     if(p61_through_put_t.enable_through_put_measure)
         p61_start_throughput_measurement(WRITE_THROUGH_PUT);
     /* Write data */
     //Mod for buf for transceive SPI data
     //ret = spi_write(p61_dev->spi, &tx_buffer[0], count);
+    //#else /* VENDOR_EDIT */
     ret = spi_write(p61_dev->spi, tmp, count);
+    //#endif /* VENDOR_EDIT */
     if (ret < 0)
     {
         ret = -EIO;
@@ -531,6 +539,7 @@ static ssize_t p61_dev_write(struct file *filp, const char *buf, size_t count,
 
     //Add for buf for transceive SPI data
     kfree(tmp);
+    //#endif /* VENDOR_EDIT */
     mutex_unlock(&p61_dev->write_mutex);
     P61_DBG_MSG(KERN_ALERT "p61_dev_write ret %d- Exit \n", ret);
     return ret;
@@ -611,7 +620,9 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
     struct p61_dev *p61_dev = filp->private_data;
     //Mod for buf for transceive SPI data
     //unsigned char rx_buffer[MAX_BUFFER_SIZE];
+    //#else /* VENDOR_EDIT */
     unsigned char *tmp = NULL;
+    //#endif /* VENDOR_EDIT */
 
     P61_DBG_MSG("p61_dev_read count %d - Enter \n", count);
 
@@ -623,6 +634,7 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
 
     //Mod for buf for transceive SPI data
     //memset(&rx_buffer[0], 0x00, sizeof(rx_buffer));
+    //#else /* VENDOR_EDIT */
     tmp = p61_dev->kbuf;
     if (!tmp) {
         pr_info("%s: device doesn't exist anymore.\n", __func__);
@@ -630,6 +642,7 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
         goto fail;
     }
     memset(tmp, 0x00, MAX_BUFFER_SIZE);
+    //#endif /* VENDOR_EDIT */
 
     if (p61_dev->enable_poll_mode)
     {
@@ -638,7 +651,9 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
         P61_DBG_MSG(KERN_INFO"SPI_READ returned 0x%x", count);
         //Mod for buf for transceive SPI data
         //ret = spi_read(p61_dev->spi, (void *)&rx_buffer[0], count);
+        //#else /* VENDOR_EDIT */
         ret = spi_read(p61_dev->spi, tmp, count);
+        //#endif /* VENDOR_EDIT */
         if (0 > ret)
         {
             P61_ERR_MSG(KERN_ALERT "spi_read failed [SOF] \n");
@@ -680,7 +695,9 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
 #endif
         //Mod for buf for transceive SPI data
         //ret = spi_read(p61_dev->spi, (void *)&rx_buffer[0], count);
+        //#else /* VENDOR_EDIT */
         ret = spi_read(p61_dev->spi, tmp, count);
+        //#endif /* VENDOR_EDIT */
         if (0 > ret)
         {
             P61_DBG_MSG(KERN_INFO"SPI_READ returned 0x%x", ret);
@@ -699,7 +716,9 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
 
     //Mod for buf for transceive SPI data
     //if (copy_to_user(buf, &rx_buffer[0], count))
+    //#else /* VENDOR_EDIT */
     if (copy_to_user(buf, tmp, count))
+    //#endif /* VENDOR_EDIT */
     {
         P61_ERR_MSG("%s : failed to copy to user space\n", __func__);
         ret = -EFAULT;
@@ -708,6 +727,7 @@ static ssize_t p61_dev_read(struct file *filp, char *buf, size_t count,
     P61_DBG_MSG("p61_dev_read ret %d Exit\n", ret);
     //Mod for buf for transceive SPI data
     //P61_DBG_MSG("p61_dev_read ret %d Exit\n", rx_buffer[0]);
+    //#endif /* VENDOR_EDIT */
 
     mutex_unlock(&p61_dev->read_mutex);
 
@@ -789,8 +809,38 @@ static int p61_hw_setup(struct p61_spi_platform_data *platform_data,
 
     }
 #endif
+#if 0
+//Modify for : remove irq & rst
+    ret = gpio_request( platform_data->rst_gpio, "p61 reset");
+    if (ret < 0)
+    {
+        P61_ERR_MSG("gpio reset request failed = 0x%x\n", platform_data->rst_gpio);
+        goto fail_gpio;
+    }
+
+    /*soft reset gpio is set to default high*/
+    ret = gpio_direction_output(platform_data->rst_gpio,1);
+    if (ret < 0)
+    {
+        P61_ERR_MSG("gpio rst request failed gpio = 0x%x\n", platform_data->rst_gpio);
+        goto fail_gpio;
+    }
+#endif
     ret = 0;
     P61_DBG_MSG("Exit : %s\n", __FUNCTION__);
+#if 0
+//Modify for : remove irq & rst
+    return ret;
+
+
+    fail_gpio:
+    gpio_free(platform_data->rst_gpio);
+
+    fail_irq:
+    gpio_free(platform_data->irq_gpio);
+    fail:
+    P61_ERR_MSG("p61_hw_setup failed\n");
+#endif
     return ret;
 }
 
@@ -838,6 +888,21 @@ static int p61_parse_dt(struct device *dev,
     struct p61_spi_platform_data *data)
 {
     int errorno = 0;
+#if 0
+//Modify for : remove irq & rst
+    struct device_node *np = dev->of_node;
+
+        data->irq_gpio = of_get_named_gpio(np, "nxp,p61-irq", 0);
+        if ((!gpio_is_valid(data->irq_gpio)))
+                return -EINVAL;
+
+        data->rst_gpio = of_get_named_gpio(np, "nxp,p61-rst", 0);
+        if ((!gpio_is_valid(data->rst_gpio)))
+                return -EINVAL;
+
+    pr_info("%s: %d, %d %d\n", __func__,
+        data->irq_gpio, data->rst_gpio, errorno);
+#endif
     return errorno;
 }
 #endif
@@ -907,6 +972,7 @@ static int p61_probe(struct spi_device *spi)
         ret = -ENOMEM;
         goto err_free_dev;
     }
+    //#endif /* VENDOR_EDIT */
     ret = p61_hw_setup (platform_data, p61_dev, spi);
     if (ret < 0)
     {
@@ -991,6 +1057,7 @@ static int p61_probe(struct spi_device *spi)
     //Add for buf for transceive SPI data
     kfree(p61_dev->kbuf);
     err_free_dev:
+    //#endif /* VENDOR_EDIT */
     if(p61_dev != NULL)
         kfree(p61_dev);
     err_exit:

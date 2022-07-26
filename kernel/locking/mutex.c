@@ -50,7 +50,6 @@ __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	lock->ux_dep_task = NULL;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
 	debug_mutex_init(lock, name, key);
 }
 EXPORT_SYMBOL(__mutex_init);
@@ -789,7 +788,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 
 	if (!use_ww_ctx) {
 		/* add waiting tasks to the end of the waitqueue (FIFO): */
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && !defined(CONFIG_MTK_TASK_TURBO)
+#if defined(OPLUS_FEATURE_SCHED_ASSIST)
 		if (sysctl_sched_assist_enabled) {
 			mutex_list_add(current, &waiter.list, &lock->wait_list, lock);
 		} else {
@@ -852,22 +851,17 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 			mutex_set_inherit_ux(lock, current);
 		}
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
 		spin_unlock(&lock->wait_lock);
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 		if (state & TASK_UNINTERRUPTIBLE) {
 			current->in_mutex = 1;
 		}
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 		schedule_preempt_disabled();
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 		if (state & TASK_UNINTERRUPTIBLE) {
 			current->in_mutex = 0;
 		}
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 
 		/*

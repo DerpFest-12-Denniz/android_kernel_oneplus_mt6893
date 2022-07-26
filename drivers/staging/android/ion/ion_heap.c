@@ -24,7 +24,6 @@
 #include <linux/scatterlist.h>
 #include <linux/vmalloc.h>
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_DUMP_TASKS_MEM)
-/* upate ions info of task. */
 #include <linux/atomic.h>
 #include <linux/sched/task.h>
 #endif
@@ -194,13 +193,13 @@ void ion_heap_freelist_add(struct ion_heap *heap, struct ion_buffer *buffer)
 	size_t unit = 200 * 1024 * 1024; //200M
 
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_DUMP_TASKS_MEM)
-	/* upate ions info of task. */
 	if (buffer->tsk) {
 		atomic64_sub(buffer->size, &buffer->tsk->ions);
 		put_task_struct(buffer->tsk);
 		buffer->tsk = NULL;
 	}
 #endif
+
 	spin_lock(&heap->free_lock);
 	list_add(&buffer->list, &heap->free_list);
 	heap->free_list_size += buffer->size;
@@ -224,9 +223,10 @@ void ion_heap_freelist_add(struct ion_heap *heap, struct ion_buffer *buffer)
 
 	if (free_list_size > unit) {
 		IONMSG(
-			"[ion_dbg] warning: free_list_size=%zu, heap_id:%u, nice:%ld\n",
-			heap->free_list_size, heap->id, nice);
+			"%s: free_size=%zu,heap_id:%u,nice:%ld\n",
+			__func__, heap->free_list_size, heap->id, nice);
 	}
+
 	set_user_nice(heap->task, nice);
 	wake_up(&heap->waitqueue);
 }

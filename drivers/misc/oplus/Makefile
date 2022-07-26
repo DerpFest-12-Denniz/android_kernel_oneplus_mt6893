@@ -1,10 +1,10 @@
 #ifdef OPLUS_ARCH_EXTEND
 obj-y += oplus_display_private_api.o
 #obj-y += oplus_display_onscreenfingerprint.o
-#obj-y += oplus_display_alwaysondisplay.o
+obj-$(CONFIG_MACH_MT6785) += oplus_display_alwaysondisplay.o
 #obj-y += oplus_display_common.o
 #obj-y += oplus_display_dc.o
-#obj-y += oplus_display_panel.o
+obj-y += display_panel/
 ccflags-y += -I$(srctree)/include/linux/
 ccflags-y += -I$(srctree)/include/uapi/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/
@@ -41,4 +41,6 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/ \
              -I$(srctree)/drivers/iommu/ \
              -I$(srctree)/drivers/misc/mediatek/smi/variant/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/
+ccflags-y += -I$(srctree)/drivers/staging/android/ion \
+                   -I$(srctree)/drivers/staging/android/ion/mtk
 #endif/*OPLUS_ARCH_EXTEND*/

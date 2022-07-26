@@ -38,7 +38,7 @@ unsigned int is_new_cdt(void);
 unsigned int get_project(void);
 unsigned int get_prj(void);
 unsigned int is_project(int project);
-unsigned int get_Oppo_Boot_Mode(void);
+unsigned int get_Oplus_Boot_Mode(void);
 unsigned int get_PCB_Version(void);
 unsigned int get_audio(void);
 unsigned int get_dtsiNo(void);

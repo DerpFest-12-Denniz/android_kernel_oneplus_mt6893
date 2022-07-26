@@ -56,6 +56,10 @@
 #include <linux/hans.h>
 #endif /*OPLUS_FEATURE_HANS_FREEZE*/
 
+#ifdef OPLUS_BUG_STABILITY
+#include <soc/oplus/system/oplus_process.h>
+#endif
+
 /*
  * SLAB caches for signal bits.
  */
@@ -1055,51 +1059,6 @@ static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_str
 }
 #endif
 
-#ifdef OPLUS_BUG_STABILITY
-static bool is_zygote_process(struct task_struct *t)
-{
-	const struct cred *tcred = __task_cred(t);
-
-	struct task_struct * first_child = NULL;
-	if(t->children.next && t->children.next != (struct list_head*)&t->children.next)
-		first_child = container_of(t->children.next, struct task_struct, sibling);
-	if(!strcmp(t->comm, "main") && (tcred->uid.val == 0) && (t->parent != 0 && !strcmp(t->parent->comm,"init"))  )
-		return true;
-	else
-		return false;
-	return false;
-}
-
-static bool is_systemserver_process(struct task_struct *t) {
-    if (!strcmp(t->comm, "system_server")) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static bool is_key_process(struct task_struct *t) {
-    struct pid *pgrp;
-    struct task_struct *taskp;
-
-    if (t->pid == t->tgid) {
-        if (is_systemserver_process(t) || is_zygote_process(t)) {
-            return true;
-        }
-    } else {
-        pgrp = task_pgrp(t);
-        if (pgrp != NULL) {
-            taskp = pid_task(pgrp, PIDTYPE_PID);
-            if (taskp != NULL && (is_systemserver_process(taskp) || is_zygote_process(taskp))) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-#endif
-
 static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
 			int group, int from_ancestor_ns)
 {
@@ -1113,15 +1072,12 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
 	result = TRACE_SIGNAL_IGNORED;
 
 #ifdef OPLUS_BUG_STABILITY
-        if(1) {
-            /*add the SIGKILL print log for some debug*/
-            if((sig == SIGHUP || sig == 33 || sig == SIGKILL || sig == SIGSTOP || sig == SIGABRT || sig == SIGTERM || sig == SIGCONT) && is_key_process(t)) {
-                    //#ifdef OPLUS_BUG_STABILITY
-                    //dump_stack();
-                    //#endif
-                    printk("Some other process %d:%s want to send sig:%d to pid:%d tgid:%d comm:%s\n", current->pid, current->comm,sig, t->pid, t->tgid, t->comm);
-            }
+    if(1) {
+        /*add the SIGKILL print log for some debug*/
+        if((sig == SIGHUP || sig == 33 || sig == SIGKILL || sig == SIGSTOP || sig == SIGABRT || sig == SIGTERM || sig == SIGCONT) && is_key_process(t)) {
+            printk("Some other process %d:%s want to send sig:%d to pid:%d tgid:%d comm:%s\n", current->pid, current->comm,sig, t->pid, t->tgid, t->comm);
         }
+    }
 #endif
 
 	if (!prepare_signal(sig, t,

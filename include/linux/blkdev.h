@@ -27,7 +27,7 @@
 #include <linux/percpu-refcount.h>
 #include <linux/scatterlist.h>
 #include <linux/blkzoned.h>
-#include <linux/blk_types.h>
+
 struct module;
 struct scsi_ioctl_command;
 
@@ -152,6 +152,7 @@ struct request {
 	ktime_t req_td;
 	ktime_t req_tc;
 #endif /*OPLUS_FEATURE_IOMONITOR*/
+
 	int internal_tag;
 
 	unsigned long atomic_flags;
@@ -164,7 +165,6 @@ struct request {
 	struct bio *bio;
 	struct bio *biotail;
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	struct list_head fg_list;
 #endif /*OPLUS_FEATURE_FG_IO_OPT*/
 	/*
@@ -416,7 +416,6 @@ struct request_queue {
 	 */
 	struct list_head	queue_head;
 	#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	struct list_head	fg_head;
 	int fg_count;
 	int both_count;
@@ -550,12 +549,13 @@ struct request_queue {
 	struct list_head	tag_busy_list;
 
 	unsigned int		nr_sorted;
-#ifndef OPLUS_FEATURE_HEALTHINFO
+#if defined(OPLUS_FEATURE_HEALTHINFO) && defined(CONFIG_OPLUS_HEALTHINFO)
 // Modify for ioqueue
-	unsigned int		in_flight[2];
-#else /* OPLUS_FEATURE_HEALTHINFO */
 	unsigned int		in_flight[4];
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+#else
+	unsigned int		in_flight[2];
+#endif /*OPLUS_FEATURE_HEALTHINFO*/
+
 	/*
 	 * Number of active block driver functions for which blk_drain_queue()
 	 * must wait. Must be incremented around functions that unlock the
@@ -758,9 +758,9 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
 	queue_lockdep_assert_held(q);
 	__clear_bit(flag, &q->queue_flags);
 }
-#ifdef OPLUS_FEATURE_HEALTHINFO
+
+#if defined(OPLUS_FEATURE_HEALTHINFO) && defined(CONFIG_OPLUS_HEALTHINFO)
 // Add for ioqueue
-#ifdef CONFIG_OPLUS_HEALTHINFO
 static inline void ohm_ioqueue_add_inflight(struct request_queue *q,
 					     struct request *rq)
 {
@@ -778,8 +778,8 @@ static inline void ohm_ioqueue_dec_inflight(struct request_queue *q,
 	else
 		q->in_flight[BLK_RW_BG]--;
 }
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+#endif /*OPLUS_FEATURE_HEALTHINFO*/
+
 #define blk_queue_tagged(q)	test_bit(QUEUE_FLAG_QUEUED, &(q)->queue_flags)
 #define blk_queue_stopped(q)	test_bit(QUEUE_FLAG_STOPPED, &(q)->queue_flags)
 #define blk_queue_dying(q)	test_bit(QUEUE_FLAG_DYING, &(q)->queue_flags)

@@ -37,13 +37,13 @@ bool is_support_chip(chip_type chip)
 
 	switch(chip) {
 		case NQ310:
-			target_chipset = "NQ310|NQ330";
+			target_chipset = "NQ310|NQ330|PN557";
 			break;
 		case NQ330:
 			target_chipset = "NQ330";
 			break;
 		case SN100T:
-			target_chipset = "SN100T";
+			target_chipset = "SN100T|SN110T";
 			break;
 		case SN100F:
 			target_chipset = "SN100F";
@@ -118,11 +118,21 @@ static int oplus_nfc_probe(struct platform_device *pdev)
 	}
 	project = get_project();
 	operator = get_Operator_Version();
-	sprintf(prop_project_operator, "chipset-%d-%d", project, operator);
+	//project name consists of 5-symbol
+	//project contains letters is big then 0x10000 == 65536
+	if (project > 0x10000)
+	{
+		sprintf(prop_project, "chipset-%X", project);
+		sprintf(prop_project_operator, "chipset-%X-%u", project, operator);
+	} else
+	{
+		sprintf(prop_project, "chipset-%u", project);
+		sprintf(prop_project_operator, "chipset-%u-%u", project, operator);
+	}
 	pr_err("%s, prop_project_operator to be read = %s", __func__, prop_project_operator);
 	readRet = of_property_read_string(dev->of_node, prop_project_operator, &chipset_node);
-	if (readRet != 0) {
-		sprintf(prop_project, "chipset-%d", project);
+	if (readRet != 0)
+	{
 		pr_err("%s, prop_project to be read = %s", __func__, prop_project);
 		readRet = of_property_read_string(dev->of_node, prop_project, &chipset_node);
 	}

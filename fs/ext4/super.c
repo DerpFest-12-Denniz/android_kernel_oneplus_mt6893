@@ -3896,6 +3896,12 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 		struct unicode_map *encoding;
 		__u16 encoding_flags;
 
+		if (ext4_has_feature_encrypt(sb)) {
+			ext4_msg(sb, KERN_ERR,
+				 "Can't mount with encoding and encryption");
+			goto failed_mount;
+		}
+
 		if (ext4_sb_read_encoding(es, &encoding_info,
 					  &encoding_flags)) {
 			ext4_msg(sb, KERN_ERR,
@@ -3923,7 +3929,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 #if defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
 	if (test_opt(sb, ASYNC_DISCARD)&&test_opt(sb,DISCARD)) {
         clear_opt(sb, DISCARD);
-        ext4_msg(sb, KERN_WARNING, "mount option discard/async_discard conflict, use async_discard default");        
+        ext4_msg(sb, KERN_WARNING, "mount option discard/async_discard conflict, use async_discard default");
     }
 #endif
 	if (test_opt(sb, DATA_FLAGS) == EXT4_MOUNT_JOURNAL_DATA) {

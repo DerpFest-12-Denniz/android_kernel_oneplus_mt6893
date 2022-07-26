@@ -21,7 +21,6 @@
 #include <linux/sched/debug.h>
 
 #include <trace/events/sched.h>
-
 #ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
 #include <linux/sched/sysctl.h>
 #include <soc/oplus/system/hung_task_enhance.h>
@@ -177,12 +176,11 @@ static bool rcu_lock_break(struct task_struct *g, struct task_struct *t)
  * a really long time (120 seconds). If that happens, print out
  * a warning.
  */
-static void check_hung_uninterruptible_tasks(unsigned long timeout) 
+static void check_hung_uninterruptible_tasks(unsigned long timeout)
 {
 	int max_count = sysctl_hung_task_check_count;
 	unsigned long last_break = jiffies;
 	struct task_struct *g, *t;
-
 #if defined(CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE) && defined(CONFIG_OPLUS_FEATURE_DEATH_HEALER)
 	unsigned int iowait_count = 0;
 #endif

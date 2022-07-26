@@ -33,7 +33,7 @@ struct vibrator_hw *pvib_cust;
 void vibr_Enable_HW(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH
-	pmic_set_register_value_nolock(PMIC_RG_LDO_VIBR_EN, 1);
+	pmic_set_register_value(PMIC_RG_LDO_VIBR_EN, 1);
 	mdelay(OC_INTR_INIT_DELAY);
 	pmic_enable_interrupt(INT_VIBR_OC, 1, "vibr");
 #endif
@@ -43,7 +43,7 @@ void vibr_Disable_HW(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH
 	pmic_enable_interrupt(INT_VIBR_OC, 0, "vibr");
-	pmic_set_register_value_nolock(PMIC_RG_LDO_VIBR_EN, 0);
+	pmic_set_register_value(PMIC_RG_LDO_VIBR_EN, 0);
 #endif
 }
 

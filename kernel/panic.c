@@ -41,6 +41,10 @@ int kernel_panic_happened = 0;
 int hwt_happened = 0;
 #endif
 
+#ifdef OPLUS_BUG_STABILITY
+int is_kernel_panic = 0;
+#endif
+
 #ifdef OPLUS_FEATURE_PERFORMANCE
 bool is_triggering_panic = false;
 bool is_triggering_hwt = false;
@@ -305,6 +309,10 @@ void panic(const char *fmt, ...)
 	if (!panic_blink)
 		panic_blink = no_blink;
 
+#ifdef OPLUS_BUG_STABILITY
+	is_kernel_panic = 1;
+#endif
+
 	if (panic_timeout > 0) {
 		/*
 		 * Delay timeout seconds before rebooting the machine.
@@ -528,6 +536,9 @@ int oops_may_print(void)
  */
 void oops_enter(void)
 {
+#ifdef OPLUS_BUG_STABILITY
+    is_kernel_panic = 1;
+#endif
 	tracing_off();
 	/* can't trust the integrity of the kernel anymore: */
 	debug_locks_off();

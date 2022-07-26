@@ -346,6 +346,7 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 	return -ENOMEM;
 }
 
+#ifdef OPLUS_BUG_STABILITY
 #define RECURSIVE_MAX_FORK_TIME 30
 int happend_times = 0;		//total recursive fork times
 pid_t fork_pid_child = 0;				//last time recursive fork pid
@@ -413,6 +414,7 @@ int anon_vma_clone_oplus(struct vm_area_struct *dst, struct vm_area_struct *src)
 	unlink_anon_vmas(dst);
 	return -ENOMEM;
 }
+#endif
 
 /*
  * Attach vma to its own anon_vma, as well as to the anon_vmas that
@@ -436,6 +438,7 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 	 * First, attach the new VMA to the parent VMA's anon_vmas,
 	 * so rmap can find non-COWed pages in child processes.
 	 */
+	#ifdef OPLUS_BUG_STABILITY
 	error = anon_vma_clone_oplus(vma, pvma);
 	if (error < 0)
 		return error;
@@ -446,6 +449,11 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 		fork_pid_father = get_current()->parent->pid;
 		return -ENOMEM;
 	}
+	#else
+	error = anon_vma_clone(vma, pvma);
+	if (error)
+		return error;
+	#endif
 
 	/* An existing anon_vma has been reused, all done then. */
 	if (vma->anon_vma)

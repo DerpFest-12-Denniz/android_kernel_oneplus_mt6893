@@ -146,10 +146,6 @@ int disable_shutdown_cond(int shutdown_cond)
 	return 0;
 }
 
-#ifdef CONFIG_OPLUS_CHARGER_MTK6893
-extern int oplus_is_wrap_project(void);
-#endif /*OPLUS_FEATURE_CHG_BASIC*/
-
 int set_shutdown_cond(int shutdown_cond)
 {
 	int now_current;
@@ -179,11 +175,9 @@ int set_shutdown_cond(int shutdown_cond)
 		now_is_kpoc, now_current, now_is_charging,
 		shutdown_cond_flag, vbat);
 
-#ifdef CONFIG_OPLUS_CHARGER_MTK6893
-	if (oplus_is_wrap_project() == 1) {
-		pr_err("%s: wrap_project, return directly\n", __func__);
-		return 0;
-	}
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	pr_err("%s: vooc_project, return directly\n", __func__);
+	return 0;
 #endif /*OPLUS_FEATURE_CHG_BASIC*/
 
 	if (shutdown_cond_flag == 1)
@@ -524,9 +518,10 @@ void power_misc_handler(void *arg)
 static int power_misc_routine_thread(void *arg)
 {
 	struct shutdown_controller *sdd = arg;
+	int ret = 0;
 
 	while (1) {
-		wait_event(sdd->wait_que, (sdd->timeout == true)
+		ret = wait_event_interruptible(sdd->wait_que, (sdd->timeout == true)
 			|| (sdd->overheat == true));
 		if (sdd->timeout == true) {
 			sdd->timeout = false;
@@ -536,11 +531,13 @@ static int power_misc_routine_thread(void *arg)
 			sdd->overheat = false;
 			bm_err("%s battery overheat~ power off\n",
 				__func__);
-			//mutex_lock(&pm_mutex);
-			//kernel_power_off();
-			//mutex_unlock(&pm_mutex);
-			//fix_coverity = 1;
-			//return 1;
+#ifndef OPLUS_FEATURE_CHG_BASIC
+			mutex_lock(&pm_mutex);
+			kernel_power_off();
+			mutex_unlock(&pm_mutex);
+			fix_coverity = 1;
+			return 1;
+#endif
 		}
 		if (fix_coverity == 1)
 			break;

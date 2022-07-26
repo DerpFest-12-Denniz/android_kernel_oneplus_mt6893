@@ -39,9 +39,9 @@ struct charger_data;
 #include "mtk_pe40_intf.h"
 #include "mtk_pe50_intf.h"
 #include "mtk_pdc_intf.h"
-#ifdef CONFIG_OPLUS_CHARGER_MTK6769
+#ifdef OPLUS_FEATURE_CHG_BASIC
 #include "mtk_hvdcp_intf.h"
-#endif /*CONFIG_OPLUS_CHARGER_MTK6769*/
+#endif /*OPLUS_FEATURE_CHG_BASIC*/
 #include "adapter_class.h"
 #include "mtk_smartcharging.h"
 
@@ -286,7 +286,10 @@ struct charger_custom_data {
 	int step2_time;
 	int step2_current_ma;
 	int step3_current_ma;
+	int pd_not_support;
+	int qc_not_support;
 /*end*/
+    bool vbus_exist;
 };
 
 struct charger_data {
@@ -301,8 +304,36 @@ struct charger_data {
 	int junction_temp_max;
 	int chargeric_temp_volt;
 	int chargeric_temp;
+	int subboard_temp;
+	int battery_temp;
 /*end*/
 };
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+typedef enum {
+	NTC_BATTERY,
+	NTC_CHARGER_IC,
+	NTC_SUB_BOARD,
+}NTC_TYPE;
+
+struct temp_param {
+	__s32 bts_temp;
+	__s32 temperature_r;
+};
+
+struct ntc_temp{
+	NTC_TYPE e_ntc_type;
+	int i_tap_over_critical_low;
+	int i_rap_pull_up_r;
+	int i_rap_pull_up_voltage;
+	int i_tap_min;
+	int i_tap_max;
+	unsigned int i_25c_volt;
+	unsigned int ui_dwvolt;
+	struct temp_param *pst_temp_table;
+	int i_table_size;
+};
+#endif
 
 struct charger_manager {
 	bool init_done;
@@ -332,17 +363,31 @@ struct charger_manager {
 
 	struct adapter_device *pd_adapter;
 
+	struct iio_channel      *subboard_temp_chan;
 	struct iio_channel      *chargeric_temp_chan;
 	struct iio_channel      *charger_id_chan;
 	struct iio_channel      *usb_temp_v_l_chan;
 	struct iio_channel      *usb_temp_v_r_chan;
+	struct iio_channel      *usbcon_temp_chan;
+	struct iio_channel      *batcon_temp_chan;
+	struct iio_channel      *batid_temp_chan;
 	struct delayed_work	step_charging_work;
 	int step_status;
 	int step_status_pre;
 	int step_cnt;
 	int step_chg_current;
+	int chargeric_temp_volt;
+	int chargeric_temp;
+	int usbcon_temp;
+	int batcon_temp;
+	bool usbtemp_lowvbus_detect;
 	bool support_ntc_01c_precision;
+	int i_sub_board_temp;
+	int i_battery_temp;
 /*end*/
+//#ifdef OPLUS_FEATURE_CHG_BASIC
+	struct adapter_power_cap srccap;
+//#endif
 	int ccdetect_gpio;
 	int ccdetect_irq;
 	struct pinctrl_state *ccdetect_active;
@@ -458,6 +503,15 @@ struct charger_manager {
 
 	/* dynamic mivr */
 	bool enable_dynamic_mivr;
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	struct hvdcp_v20 hvdcp;
+	bool charging_limit_current_fm;
+	int usb_charging_limit_current_fm;
+	int ac_charging_limit_current_fm;
+	bool charging_call_mode;
+	bool charging_lcd_on_mode;
+	bool charge_timeout;
+#endif /* OPLUS_FEATURE_CHG_BASIC */
 
 	struct smartcharging sc;
 
@@ -467,15 +521,9 @@ struct charger_manager {
 	u_int g_scd_pid;
 	struct scd_cmd_param_t_1 sc_data;
 
-#ifdef CONFIG_OPLUS_CHARGER_MTK6769
-	struct hvdcp_v20 hvdcp;
-	bool charging_limit_current_fm;
-	int usb_charging_limit_current_fm;
-	int ac_charging_limit_current_fm;
-	bool charging_call_mode;
-	bool charging_lcd_on_mode;
-	bool charge_timeout;
-#endif /* CONFIG_OPLUS_CHARGER_MTK6769 */
+	bool force_disable_pp[TOTAL_CHARGER];
+	bool enable_pp[TOTAL_CHARGER];
+	struct mutex pp_lock[TOTAL_CHARGER];
 };
 
 /* charger related module interface */

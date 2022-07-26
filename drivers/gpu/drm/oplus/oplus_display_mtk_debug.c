@@ -16,7 +16,6 @@ extern bool g_mobile_log;
 extern bool g_detail_log;
 extern bool g_irq_log;
 extern bool g_fence_log;
-extern bool g_trace_log;
 
 int oplus_display_set_mtk_loglevel(void *buf)
 {
@@ -38,8 +37,6 @@ int oplus_display_set_mtk_loglevel(void *buf)
 			g_fence_log = true;
 		if ((loglevel & MTK_LOG_LEVEL_IRQ_LOG) == MTK_LOG_LEVEL_IRQ_LOG)
 			g_irq_log = true;
-		if ((loglevel & MTK_LOG_LEVEL_TRACE_LOG) == MTK_LOG_LEVEL_TRACE_LOG)
-			g_trace_log = true;
 	} else {
 		if ((loglevel & MTK_LOG_LEVEL_MOBILE_LOG) == MTK_LOG_LEVEL_MOBILE_LOG)
 			g_mobile_log = false;
@@ -49,8 +46,6 @@ int oplus_display_set_mtk_loglevel(void *buf)
 			g_fence_log = false;
 		if ((loglevel & MTK_LOG_LEVEL_IRQ_LOG) == MTK_LOG_LEVEL_IRQ_LOG)
 			g_irq_log = false;
-		if ((loglevel & MTK_LOG_LEVEL_TRACE_LOG) == MTK_LOG_LEVEL_TRACE_LOG)
-			g_trace_log = false;
 	}
 
 	return 0;

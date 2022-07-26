@@ -1,6 +1,6 @@
 /******************************************************************************
 ** Copyright (C), 2019-2029, OPLUS Mobile Comm Corp., Ltd
-** All rights reserved.
+** OPLUS_EDIT, All rights reserved.
 ** File: - opluswificap center.c
 ** Description: wificapcenter (wcc)
 **
@@ -11,7 +11,6 @@
 ** <author>                                <data>        <version>       <desc>
 ** ------------------------------------------------------------------------------
  *******************************************************************************/
-
 #include <linux/types.h>
 #include <linux/ip.h>
 #include <linux/netfilter.h>
@@ -50,26 +49,26 @@
 /*If response event is close contact with request,*/
 /*response  can be same with req to reduce msg*/
 enum{
-	/*common msg for sync and async from 0x11-0x29*/
-	OPLUS_COMMON_MSG_BASE                           = 0x11,
-	OPLUS_WIFI_CAP_CENTER_NOTIFY_PID                = OPLUS_COMMON_MSG_BASE,
+        /*common msg for sync and async from 0x11-0x29*/
+        OPLUS_COMMON_MSG_BASE                    = 0x11,
+	OPLUS_WIFI_CAP_CENTER_NOTIFY_PID	        = OPLUS_COMMON_MSG_BASE,
 
-	/*sync msg from 0x30-0x79;*/
-	OPLUS_SYNC_MSG_BASE                             = 0x30,
-	OPLUS_SAMPLE_SYNC_GET                           = OPLUS_SYNC_MSG_BASE,
-	OPLUS_SAMPLE_SYNC_GET_NO_RESP                   = OPLUS_SYNC_MSG_BASE + 1,
+        /*sync msg from 0x30-0x79;*/
+	OPLUS_SYNC_MSG_BASE                      = 0x30,
+	OPLUS_SAMPLE_SYNC_GET	                = OPLUS_SYNC_MSG_BASE,
+	OPLUS_SAMPLE_SYNC_GET_NO_RESP	        = OPLUS_SYNC_MSG_BASE + 1,
 
-	OPLUS_SYNC_REMOVE_HE_IE_FROM_PROBE_REQUEST      = OPLUS_SYNC_MSG_BASE + 2,
-	OPLUS_SYNC_DBS_CAPACITY_GET                     = OPLUS_SYNC_MSG_BASE + 3,
-	OPLUS_SYNC_PHY_CAPACITY_GET                     = OPLUS_SYNC_MSG_BASE + 4,
-	OPLUS_SYNC_SUPPORTED_CHANNELS_GET               = OPLUS_SYNC_MSG_BASE + 5,
-	OPLUS_SYNC_AVOID_CHANNELS_GET                   = OPLUS_SYNC_MSG_BASE + 6,
+	OPLUS_SYNC_REMOVE_HE_IE_FROM_PROBE_REQUEST = OPLUS_SYNC_MSG_BASE + 2,
+	OPLUS_SYNC_DBS_CAPACITY_GET              = OPLUS_SYNC_MSG_BASE + 3,
+	OPLUS_SYNC_PHY_CAPACITY_GET 				= OPLUS_SYNC_MSG_BASE + 4,
+	OPLUS_SYNC_SUPPORTED_CHANNELS_GET 		= OPLUS_SYNC_MSG_BASE + 5,
+	OPLUS_SYNC_AVOID_CHANNELS_GET 			= OPLUS_SYNC_MSG_BASE + 6,
 
-	/*async msg from 0x80-(max-1)*/
-	OPLUS_ASYNC_MSG_BASE                            = 0x80,
-	OPLUS_SAMPLE_ASYNC_GET                          = OPLUS_ASYNC_MSG_BASE,
+        /*async msg from 0x80-(max-1)*/
+        OPLUS_ASYNC_MSG_BASE                     = 0x80,
+	OPLUS_SAMPLE_ASYNC_GET	                = OPLUS_ASYNC_MSG_BASE,
 
-	OPLUS_WIFI_CAP_CENTER_MAX                       = 0x100,
+	OPLUS_WIFI_CAP_CENTER_MAX                = 0x100,
 };
 
 static DEFINE_MUTEX(oplus_wcc_sync_nl_mutex);

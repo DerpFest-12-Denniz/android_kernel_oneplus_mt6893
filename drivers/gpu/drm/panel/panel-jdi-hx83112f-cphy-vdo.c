@@ -46,17 +46,19 @@
 /* #endif */ /* OPLUS_BUG_STABILITY */
 
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
-#include "../mediatek/mtk_corner_pattern/mtk_data_hw_roundedpattern.h"
+#include "../mediatek/mtk_corner_pattern/oplus19131_data_hw_roundedpattern.h"
 #endif
 
 #define AVDD_REG 0x00
 #define AVDD_REG 0x01
+#define MAX_NORMAL_BRIGHTNESS   2047
 
 /* i2c control start */
 #define LCM_I2C_ID_NAME "I2C_LCD_BIAS"
 static struct i2c_client *_lcm_i2c_client;
 /* extern unsigned long esd_flag; */
 static unsigned long esd_flag = 0;
+extern unsigned long oplus_max_normal_brightness;
 /*****************************************************************************
  * Function Prototype
  *****************************************************************************/
@@ -651,7 +653,10 @@ static struct mtk_panel_params ext_params = {
 		.pll_clk = 428,
 		.hfp = 400,
 		.vfp = 2520,
+		.data_rate = 856,
 	},
+	.vendor = "HX83112F_JDI",
+	.manufacture = "hx2048",
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
 	.round_corner_en = 1,
 	.corner_pattern_height = ROUND_CORNER_H_TOP,
@@ -716,7 +721,10 @@ static struct mtk_panel_params ext_params_90hz = {
 		.pll_clk = 428,
 		.hfp = 400,
 		.vfp = 876,
+		.data_rate = 856,
 	},
+	.vendor = "HX83112F_JDI",
+	.manufacture = "hx2048",
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
 	.round_corner_en = 1,
 	.corner_pattern_height = ROUND_CORNER_H_TOP,
@@ -781,7 +789,10 @@ static struct mtk_panel_params ext_params_120hz = {
 		.vfp_lp_dyn = 2520,
 		.hfp = 400,
 		.vfp = 54,
+		.data_rate = 856,
 	},
+	.vendor = "HX83112F_JDI",
+	.manufacture = "hx2048",
 #ifdef CONFIG_MTK_ROUND_CORNER_SUPPORT
 	.round_corner_en = 1,
 	.corner_pattern_height = ROUND_CORNER_H_TOP,
@@ -1089,7 +1100,7 @@ static struct mtk_panel_funcs ext_funcs = {
 	.panel_poweron = lcm_panel_poweron,
 	.panel_poweroff = lcm_panel_poweroff,
 	.mode_switch = mode_switch,
-	/* .cabc_switch = cabc_switch, */
+	.cabc_switch = cabc_switch,
 };
 #endif
 
@@ -1274,6 +1285,7 @@ static int jdi_probe(struct mipi_dsi_device *dsi)
 /* #endif */ /* OPLUS_BUG_STABILITY */
 
 	register_device_proc("lcd", "HX83112F_JDI", "hx2048");
+	oplus_max_normal_brightness = MAX_NORMAL_BRIGHTNESS;
 	pr_info("%s-\n", __func__);
 
 	return ret;

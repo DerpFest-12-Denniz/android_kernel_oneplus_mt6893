@@ -48,6 +48,7 @@
 #define FAN53870_LDO56_SEQ_REG   0x0D
 #define FAN53870_LDO7_SEQ_REG    0x0E
 #define FAN53870_LDO_NUM_MAX     8
+#define FAN53870_LDO2_VOUT_BASE  800
 
 struct fan53870_platform_data {
     unsigned int ldo1_min_vol;
@@ -65,9 +66,23 @@ struct fan53870_pw_chip {
     struct device *dev;
     struct fan53870_platform_data *pdata;
     struct regmap *regmap;
+    int en_gpio;
 };
 static struct fan53870_pw_chip *fan53870_pchip;
 int is_fan53870_1p1 = -1;
+int ldo5_power_on = 0;
+int ldo7_power_on = 0;
+void enable_fan53870_gpio(int pwr_status)
+{
+    if(fan53870_pchip->en_gpio)
+        gpio_set_value(fan53870_pchip->en_gpio, pwr_status);
+}
+EXPORT_SYMBOL(enable_fan53870_gpio);
+
+static int is_fan53870_always_enable_on_probe(void)
+{
+	return is_project(0x212A1);
+}
 
 static int fan53870_mask_write_reg(struct regmap *regmap, uint reg, uint mask, uint value)
 {
@@ -268,7 +283,45 @@ int fan53870_ldo5_20817_disable(void)
     return ret;
 }
 EXPORT_SYMBOL(fan53870_ldo5_20817_disable);
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+int fan53870_ldo3_20615_set_voltage(int set_uV)
+{
+    int ret;
+    unsigned int reg_value = 0x11; /*1.144V*/
+    struct fan53870_pw_chip *pchip = fan53870_pchip;
 
+    pr_err("fan53870_ldo3_set_voltage: voltage = %d!\n", set_uV);
+    ret = regmap_write(pchip->regmap, FAN53870_LDO3_VOUT_REG, reg_value);
+    pr_info("Writing 0x%02x to 0x%02x \n", reg_value, FAN53870_LDO3_VOUT_REG);
+    if (ret < 0)
+        goto out;
+
+    ret = fan53870_mask_write_reg(pchip->regmap, FAN53870_LDO34_SEQ_REG, 0x07, 0x00);
+    if (ret < 0)
+        goto out;
+
+    ret = fan53870_mask_write_reg(pchip->regmap, FAN53870_LDO_ENABLE_REG, 0x04, 0x04);
+    if (ret < 0)
+        goto out;
+
+    return 0;
+
+out:
+    pr_err("fan53870_ldo3_20615_set_voltagefailed!\n");
+    return ret;
+}
+EXPORT_SYMBOL(fan53870_ldo3_20615_set_voltage);
+
+int fan53870_ldo3_20615_disable(void)
+{
+    int ret;
+    struct fan53870_pw_chip *pchip = fan53870_pchip;
+    ret = fan53870_mask_write_reg(pchip->regmap, FAN53870_LDO_ENABLE_REG, 0x04, 0x00);
+    pr_err("fan53870_ldo3_20615_disable!\n");
+    return ret;
+}
+EXPORT_SYMBOL(fan53870_ldo3_20615_disable);
+#endif
 int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
 {
     int ret;
@@ -283,6 +336,8 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
                 reg_value = 0x89;    /*1.104V*/
             } else if (set_mv == 1200) {
                 reg_value = 0x95;    /*1.200V*/
+            } else if (set_mv == 1100) {
+                reg_value = 0x89;
             } else {
                 reg_value = 0x80;    /*1.032V*/
             }
@@ -301,7 +356,25 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
                 goto out;
         break;
         case 2:
+		#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+            if (set_mv == 1100) {
+                reg_value = 0x89;
+            } else if(set_mv == 800){
+                reg_value =0x69;    /*0.848V*/
+			} else if (set_mv == 1050) {
+                reg_value = 0x83;    /*1.056V*/
+            } else if (set_mv == 1250) {
+                reg_value = 0x9B;
+            } else if (set_mv == 1400) {
+                reg_value = 0xAE;
+            } else if (set_mv <= 800 || set_mv > 1504) {
+                reg_value =0x63; /*800mv*/
+            } else {
+                reg_value = (set_mv - FAN53870_LDO2_VOUT_BASE)/8 + 0x63;
+            }
+		#else
             reg_value =0x95;    /*1.200V*/
+		#endif
             ret = regmap_write(pchip->regmap, FAN53870_LDO2_VOUT_REG, reg_value);
             pr_err("Writing 0x%02x to 0x%02x \n", reg_value, FAN53870_LDO2_VOUT_REG);
             if (ret < 0)
@@ -343,6 +416,9 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
                 reg_value =0xA6;    /*2.7V*/
             }else if (set_mv == 2900) {
                 reg_value =0xBF;    /*2.9V*/
+            } 
+			else if (set_mv == 1800) {
+                reg_value =0x36;    /*1.8V*/
             } else {
                 reg_value =0x10; /*1.5V*/
             }
@@ -362,6 +438,21 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
         case 5:
             if(set_mv==1800){
                 reg_value = 0x36; /*1.804V*/
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+            } else if(set_mv == 2700){
+                reg_value = 0xA6; /*2.7V*/
+            } else if(set_mv == 2800){
+                reg_value = 0xB3; /*2.8V*/
+            } else if (set_mv == 2900) {
+                reg_value = 0xBF;
+            } else if(set_mv == 3300) {
+                reg_value = 0xf1;    /*3.3V*/
+#endif
+            } else if (set_mv >= 3000 ) {
+				if (is_project(21015) || is_project(21217)) {
+					pr_err("reg_value = 0xf1");
+					reg_value = 0xf1; /*3.300V*/
+				}
             } else {
                 reg_value = 0x10; /*1.5V*/
             }
@@ -381,8 +472,16 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
         case 6:
             if (set_mv == 2800) {
                 reg_value =0xB3; /*2.804V*/
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+            } else if (set_mv == 2900) {
+                reg_value = 0xBF;
+#endif
             } else if (set_mv == 1800) {
                 reg_value =0x36; /*1.804V*/
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+            } else if (set_mv == 2850) {
+                reg_value = 0xB9;
+#endif
             } else {
                 reg_value =0x10; /*1.5V*/
             }
@@ -402,8 +501,14 @@ int fan53870_cam_ldo_set_voltage(unsigned int LDO_NUM, int set_mv)
         case 7:
             if (set_mv == 2800) {
                 reg_value =0xB3; /*2.804V*/
-            }else if (set_mv == 2900) {
+            } else if (set_mv == 2900) {
                 reg_value =0xBF; /*2.9V*/
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+            } else if (set_mv == 2850) {
+                reg_value = 0xB9;
+#endif
+            } else if (set_mv == 3300) {
+                reg_value = 0xF1; /*3.3V*/
             } else {
                 reg_value =0x10; /*1.5V*/
             }
@@ -463,6 +568,7 @@ static int fan53870_dt(struct device *dev, struct fan53870_platform_data *pdata)
 {
     int rc = 0;
     struct device_node *np = dev->of_node;
+    int reset_gpio = 0;
 
     rc = of_property_read_u32(np, "ldo1_min_vol", &pdata->ldo1_min_vol);
     if (rc < 0) {
@@ -481,6 +587,28 @@ static int fan53870_dt(struct device *dev, struct fan53870_platform_data *pdata)
     }
     pr_err("%s: ldo1_min_vol=%d, ldo1_max_vol=%d, ldo1_step_vol=%d\n", __func__,
            pdata->ldo1_min_vol, pdata->ldo1_max_vol, pdata->ldo1_step_vol);
+    rc = of_property_read_u32(np, "fan53870,ldo5-always-on", &ldo5_power_on);
+    if (rc < 0) {
+        pr_err("failed to request fan53870,ldo5-always-on rc=%d\n", rc);
+        ldo5_power_on = 0;
+    }
+    rc = of_property_read_u32(np, "fan53870,ldo7-always-on", &ldo7_power_on);
+    if (rc < 0) {
+        pr_err("failed to request fan53870,ldo7-always-on rc=%d\n", rc);
+        ldo7_power_on = 0;
+    }
+    /*get reset resource*/
+    reset_gpio = of_get_named_gpio(np, "fan53870,gpio_rst", 0);
+    if (!gpio_is_valid(reset_gpio)) {
+        pr_err("RESET GPIO is invalid.\n");
+        return 0;
+    }
+    rc = gpio_request(reset_gpio, "fan53870_reset");
+    if (rc) {
+        pr_err("Failed to request RESET GPIO. rc = %d\n", rc);
+        return 0;
+    }
+    gpio_direction_output(reset_gpio, 1);
 
     return 0;
 }
@@ -495,6 +623,13 @@ static int fan53870_pmic_probe(struct i2c_client *client,
 {
     struct fan53870_platform_data *pdata = client->dev.platform_data;
     struct fan53870_pw_chip *pchip;
+#if defined(CONFIG_MACH_MT6877)
+    struct device *dev;
+    struct device_node *np;
+#else
+    struct device *dev;
+    struct device_node *np;
+#endif
     unsigned int product_id;
     int ret = 0;
     int access_time = 3;
@@ -534,6 +669,31 @@ static int fan53870_pmic_probe(struct i2c_client *client,
     fan53870_pchip = pchip;
     pchip->pdata = pdata;
     pchip->dev = &client->dev;
+#if defined(CONFIG_MACH_MT6877)
+    dev = &client->dev;
+    np = dev->of_node;
+    pchip->en_gpio = of_get_named_gpio(np, "en-gpios", 0);
+    if (pchip->en_gpio < 0) {
+        pr_err("fan53870_pchip->en_gpio not specified\n");
+    }
+    if (!gpio_is_valid(pchip->en_gpio) ) {
+        pr_err("fan53870_pchip en gpio\n");
+        return -EINVAL;
+    }
+#else
+    if (is_project(21127) || is_project(21305)) {
+        dev = &client->dev;
+        np = dev->of_node;
+        pchip->en_gpio = of_get_named_gpio(np, "en-gpios", 0);
+        if (pchip->en_gpio < 0) {
+            pr_err("fan53870_pchip->en_gpio not specified\n");
+        }
+        if (!gpio_is_valid(pchip->en_gpio) ) {
+            pr_err("fan53870_pchip en gpio\n");
+            return -EINVAL;
+        }
+    }
+#endif
     pchip->regmap = devm_regmap_init_i2c(client, &fan53870_regmap);
     if (IS_ERR(pchip->regmap)) {
         ret = PTR_ERR(pchip->regmap);
@@ -543,7 +703,7 @@ static int fan53870_pmic_probe(struct i2c_client *client,
     }
 
     i2c_set_clientdata(client, pchip);
-
+    enable_fan53870_gpio(1);
     ret = regmap_read(pchip->regmap, FAN53870_PRODUCT_ID_REG, &product_id);
     while (ret == -1 && --access_time) {
         mdelay(2);
@@ -555,7 +715,18 @@ static int fan53870_pmic_probe(struct i2c_client *client,
         is_fan53870_1p1 = -1;
         pr_err("%s : ret:%d regmap_read error fan53870 access failed!\n", __func__, ret);
     }
+    if (ldo5_power_on == 1) { //for fingerprint 3.3v
+    pr_info("%s set fan53870 ldo5 alway on 3.3v\n", __func__);
+    fan53870_cam_ldo_set_voltage(5, 3300);
+    }
+    if (ldo7_power_on == 1) { //for fingerprint 3.3v
+    pr_info("%s set fan53870 ldo7 alway on 3.3v\n", __func__);
+    fan53870_cam_ldo_set_voltage(7, 3300);
+    }
     pr_err("%s : ret:%d product_id:%d probe done\n", __func__, ret, product_id);
+    if (!is_fan53870_always_enable_on_probe()) {
+        enable_fan53870_gpio(0);
+    }
     return 0;
 error_enable:
     devm_kfree(&client->dev, pchip->pdata);

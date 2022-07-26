@@ -27,14 +27,11 @@
 #include <linux/mm_types_task.h>
 #include <linux/task_io_accounting.h>
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 #include <linux/healthinfo/jank_monitor.h>
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
-
-#ifdef OPLUS_FEATURE_SPECIALOPT
-extern int sysctl_cpu_multi_thread;
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+#include <linux/sched_assist/sched_assist_status.h>
 #endif
 
 /* task_struct member predeclarations (sorted alphabetically): */
@@ -215,15 +212,17 @@ struct task_group;
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 extern int sysctl_sched_assist_enabled;
 extern int sysctl_sched_assist_scene;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 extern int sysctl_animation_type;
+
+
 extern int sysctl_slide_boost_enabled;
 extern int sysctl_boost_task_threshold;
 extern int sysctl_input_boost_enabled;
-extern int sysctl_sched_assist_ib_duration_coedecay;
-extern u64 sched_assist_input_boost_duration;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
+#ifdef CONFIG_OPLUS_PREFER_SILVER
+extern int sysctl_prefer_silver;
+#endif /* CONFIG_OPLUS_PREFER_SILVER */
 
 /* Task command name length: */
 #define TASK_COMM_LEN			16
@@ -769,7 +768,6 @@ struct wake_q_node {
 };
 
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-/* Record process reclaim memory information */
 union reclaim_limit {
 	unsigned long stop_jiffies;
 	unsigned long stop_scan_addr;
@@ -798,6 +796,11 @@ struct task_struct {
 	/* Per task flags (PF_*), defined further below: */
 	unsigned int			flags;
 	unsigned int			ptrace;
+
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	u64 wake_tid;
+	u64 running_start_time;
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 
 #ifdef CONFIG_SMP
 	struct llist_node		wake_entry;
@@ -1066,11 +1069,11 @@ struct task_struct {
 #endif
 #ifdef CONFIG_DETECT_HUNG_TASK
 	unsigned long			last_switch_count;
-
 #ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
 	bool hang_detection_enabled;
 #endif /* CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE */
 #endif
+
 	/* Filesystem information: */
 	struct fs_struct		*fs;
 
@@ -1321,6 +1324,20 @@ struct task_struct {
 	struct list_head user_tasks;
 	atomic64_t ions;
 #endif
+
+#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
+#define UID_PERF_EVENTS 3
+	struct perf_event* uid_pevents[UID_PERF_EVENTS];
+	long long uid_counts[UID_PERF_EVENTS];
+	long long uid_prev_counts[UID_PERF_EVENTS];
+	long long uid_leaving_counts[UID_PERF_EVENTS];
+
+	/* define for grouping info */
+#define UID_GROUP_SIZE 8
+	long long uid_group[UID_GROUP_SIZE];
+	long long uid_group_prev_counts[UID_GROUP_SIZE];
+	long long uid_group_snapshot_prev_counts[UID_GROUP_SIZE];
+#endif
 	/*
 	 * Time slack values; these are used to round up poll() and
 	 * select() etc timeout values. These are in nanoseconds.
@@ -1381,6 +1398,9 @@ struct task_struct {
 	/* KCOV sequence number: */
 	int				kcov_sequence;
 #endif
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+	struct task_info oplus_task_info;
+#endif
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	int ux_state;
 	atomic64_t inherit_ux;
@@ -1406,7 +1426,6 @@ struct task_struct {
 	unsigned int			memcg_nr_pages_over_high;
 #endif
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	/* Record process reclaim infor */
 	union reclaim_limit reclaim;
 #endif
 #ifdef CONFIG_UPROBES
@@ -1444,8 +1463,8 @@ struct task_struct {
 	short nice_backup;
 	atomic_t inherit_types;
 #endif
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 	int jank_trace;
 	struct jank_monitor_info jank_info;
 	unsigned in_mutex:1;
@@ -1454,17 +1473,14 @@ struct task_struct {
 	unsigned in_futex:1;
 	unsigned in_binder:1;
 	unsigned in_epoll:1;
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
+
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
 	 */
 	randomized_struct_fields_end
 
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	struct fuse_package *fpack;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;
 
@@ -1475,14 +1491,6 @@ struct task_struct {
 	 * Do not put anything below here!
 	 */
 };
-
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-struct fuse_package {
-	bool fuse_open_req;
-	struct file *filp;
-	char *iname;
-};
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 
 static inline struct pid *task_pid(struct task_struct *task)
 {
@@ -1689,8 +1697,8 @@ extern struct pid *cad_pid;
 #define PF_MUTEX_TESTER		0x20000000	/* Thread belongs to the rt mutex tester */
 #define PF_FREEZER_SKIP		0x40000000	/* Freezer should not count it as freezable */
 #define PF_SUSPEND_TASK		0x80000000      /* This thread called freeze_processes() and should not be frozen */
+
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-/* flag that current task is process reclaimer */
 #define PF_RECLAIM_SHRINK	0x02000000	/* Flag the task is memory compresser */
 
 #define current_is_reclaimer() (current->flags & PF_RECLAIM_SHRINK)
@@ -1887,25 +1895,26 @@ extern void kick_process(struct task_struct *tsk);
 static inline void kick_process(struct task_struct *tsk) { }
 #endif
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-extern void sched_assist_target_comm(struct task_struct *task);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-extern void __set_task_comm(struct task_struct *tsk, const char *from, bool exec);
-
 #ifdef CONFIG_OPLUS_ION_BOOSTPOOL
 extern pid_t alloc_svc_tgid;
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
-
+extern void __set_task_comm(struct task_struct *tsk, const char *from, bool exec);
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
+extern void sched_assist_target_comm(struct task_struct *task);
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+extern void get_target_thread_pid(struct task_struct *p);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 static inline void set_task_comm(struct task_struct *tsk, const char *from)
 {
 	__set_task_comm(tsk, from, false);
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	sched_assist_target_comm(tsk);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 #ifdef CONFIG_OPLUS_ION_BOOSTPOOL
 	if (!strncmp(from, "allocator@4.0-s", TASK_COMM_LEN))
 		alloc_svc_tgid = tsk->tgid;
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	get_target_thread_pid(tsk);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 }
 
 extern char *__get_task_comm(char *to, size_t len, struct task_struct *tsk);

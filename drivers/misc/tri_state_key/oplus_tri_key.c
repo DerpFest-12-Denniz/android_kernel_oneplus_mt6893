@@ -1254,7 +1254,6 @@ static int init_trikey_proc(struct extcon_dev_data *hall_dev)
 	}
 
 	return ret;
-
 }
 static void register_tri_key_dev_work(struct work_struct *work)
 {

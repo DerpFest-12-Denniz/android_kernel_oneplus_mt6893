@@ -556,7 +556,10 @@ static void write_cmos_sensor(kal_uint32 addr, kal_uint32 para)
 
 static void set_dummy(void)
 {
-    if(!_is_seamless) {
+     LOG_INF("shutter =%d, framelength =%d,\n",imgsensor.shutter, imgsensor.frame_length);
+     if(imgsensor.shutter > imgsensor.min_frame_length - imgsensor_info.margin)
+        imgsensor.frame_length = imgsensor.shutter + imgsensor_info.margin;
+     if(!_is_seamless) {
         //imgsensor.frame_length = (imgsensor.frame_length  >> 1) << 1;
         //write_cmos_sensor(0x3208, 0x00);
         write_cmos_sensor(0x380c, imgsensor.line_length >> 8);
@@ -634,8 +637,8 @@ static void write_shutter(kal_uint32 shutter)
                     shutter;
 
     //frame_length and shutter should be an even number.
-    //shutter = (shutter >> 1) << 1;
-    //imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+    shutter = (shutter >> 1) << 1;
+    imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
 
     if(imgsensor.autoflicker_en == KAL_TRUE){
         realtime_fps = imgsensor.pclk / imgsensor.line_length * 10 /
@@ -655,19 +658,19 @@ static void write_shutter(kal_uint32 shutter)
         if (_is_initFlag) {
             write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
             write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
-            write_cmos_sensor(0x380f, imgsensor.frame_length & 0xFF);
+            write_cmos_sensor(0x380f, imgsensor.frame_length & 0xFE);
             write_cmos_sensor(0x3500, (shutter >> 16) & 0xFF);
             write_cmos_sensor(0x3501, (shutter >> 8) & 0xFF);
-            write_cmos_sensor(0x3502, (shutter)  & 0xFF);
+            write_cmos_sensor(0x3502, (shutter)  & 0xFE);
             _is_initFlag = 0;
         } else {
             write_cmos_sensor(0x3208, 0x01);
             write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
             write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
-            write_cmos_sensor(0x380f, imgsensor.frame_length & 0xFF);
+            write_cmos_sensor(0x380f, imgsensor.frame_length & 0xFE);
             write_cmos_sensor(0x3500, (shutter >> 16) & 0xFF);
             write_cmos_sensor(0x3501, (shutter >> 8) & 0xFF);
-            write_cmos_sensor(0x3502, (shutter)  & 0xFF);
+            write_cmos_sensor(0x3502, (shutter)  & 0xFE);
             write_cmos_sensor(0x3208, 0x11);
             write_cmos_sensor(0x3208, 0xa1);
        }
@@ -677,13 +680,13 @@ static void write_shutter(kal_uint32 shutter)
         _i2c_data[_size_to_write++] = 0x380e;
         _i2c_data[_size_to_write++] = imgsensor.frame_length >> 8;
         _i2c_data[_size_to_write++] = 0x380f;
-        _i2c_data[_size_to_write++] = imgsensor.frame_length & 0xFF;
+        _i2c_data[_size_to_write++] = imgsensor.frame_length & 0xFE;
         _i2c_data[_size_to_write++] = 0x3500;
         _i2c_data[_size_to_write++] = (shutter >> 16) & 0xFF;
         _i2c_data[_size_to_write++] = 0x3501;
         _i2c_data[_size_to_write++] = (shutter >> 8) & 0xFF;
         _i2c_data[_size_to_write++] = 0x3502;
-        _i2c_data[_size_to_write++] = (shutter)  & 0xFF;
+        _i2c_data[_size_to_write++] = (shutter)  & 0xFE;
     }
     LOG_INF("shutter =%d, framelength =%d, realtime_fps =%d _is_seamless %d\n",
             shutter, imgsensor.frame_length, realtime_fps, _is_seamless);
@@ -2204,38 +2207,22 @@ static kal_uint32 get_default_framerate_by_scenario(
 static kal_uint32 set_test_pattern_mode(kal_bool enable)
 {
     LOG_INF("Jesse+ enable: %d\n", enable);
-    if (enable) {
+    if (enable) { // for solid color
 
-        write_cmos_sensor(0x0304, 0x00);
-        write_cmos_sensor(0x0305, 0xba);
-        write_cmos_sensor(0x0324, 0x00);
-        write_cmos_sensor(0x0325, 0xf0);
-        write_cmos_sensor(0x034b, 0x00);
-        write_cmos_sensor(0x380c, 0x06);
-        write_cmos_sensor(0x380d, 0xc0);
-        write_cmos_sensor(0x4837, 0x11);
-        write_cmos_sensor(0x4850, 0x43);
+        write_cmos_sensor(0x3019, 0xf0);
+        write_cmos_sensor(0x4308, 0x01);
+        write_cmos_sensor(0x4300, 0x00);
+        write_cmos_sensor(0x4302, 0x00);
+        write_cmos_sensor(0x4304, 0x00);
+        write_cmos_sensor(0x4306, 0x00);
 
-        write_cmos_sensor(0x5000, 0x81);
-        write_cmos_sensor(0x5001, 0x40);
-        write_cmos_sensor(0x5002, 0x92);
-        write_cmos_sensor(0x5081, 0x81);
         } else {
-
-        write_cmos_sensor(0x0304, 0x01);
-        write_cmos_sensor(0x0305, 0x75);
-        write_cmos_sensor(0x0324, 0x01);
-        write_cmos_sensor(0x0325, 0xe0);
-        write_cmos_sensor(0x034b, 0x00);
-        write_cmos_sensor(0x380c, 0x06);
-        write_cmos_sensor(0x380d, 0xc0);
-        write_cmos_sensor(0x4837, 0x08);
-        write_cmos_sensor(0x4850, 0x43);
-
-        write_cmos_sensor(0x5000, 0xCB);
-        write_cmos_sensor(0x5001, 0x43);
-        write_cmos_sensor(0x5002, 0x9E);
-        write_cmos_sensor(0x5081, 0x80);
+        write_cmos_sensor(0x3019, 0xd2);
+        write_cmos_sensor(0x4308, 0x00);
+        write_cmos_sensor(0x4300, 0x00);
+        write_cmos_sensor(0x4302, 0x00);
+        write_cmos_sensor(0x4304, 0x00);
+        write_cmos_sensor(0x4306, 0x00);
         }
 
     spin_lock(&imgsensor_drv_lock);
@@ -2246,10 +2233,11 @@ static kal_uint32 set_test_pattern_mode(kal_bool enable)
 
 static kal_uint32 get_sensor_temperature(void)
 {
+/*
     UINT32 temperature = 0;
     INT32 temperature_convert = 0;
 
-    /*TEMP_SEN_CTL */
+    //TEMP_SEN_CTL
     write_cmos_sensor(0x4d12, 0x01);
     temperature = (read_cmos_sensor(0x4d13) << 8) |
         read_cmos_sensor(0x4d13);
@@ -2267,9 +2255,9 @@ static kal_uint32 get_sensor_temperature(void)
                 //temperature_convert);
         temperature_convert = -64;
     }
-
-    return 20;
     //return temperature_convert;
+*/
+    return 20;
 }
 
 static kal_uint32 seamless_switch(enum MSDK_SCENARIO_ID_ENUM scenario_id,
@@ -2460,7 +2448,7 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
         }
         break;
     case SENSOR_FEATURE_GET_OFFSET_TO_START_OF_EXPOSURE:
-        *(MINT32 *)(signed long)(*(feature_data + 1)) = -17800000;
+        *(MINT32 *)(signed long)(*(feature_data + 1)) = -2300000;
         break;
     case SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ_BY_SCENARIO:
         switch (*feature_data) {

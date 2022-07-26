@@ -35,11 +35,11 @@
 #define TPD_DEBUG_CODE
 /* #define TPD_DEBUG_TRACK */
 #define TPD_DMESG(a, arg...) \
-	pr_err(TPD_DEVICE ":[%s:%d] " a, __func__, __LINE__, ##arg)
+	pr_info(TPD_DEVICE ":[%s:%d] " a, __func__, __LINE__, ##arg)
 #if defined(TPD_DEBUG)
 #undef TPD_DEBUG
 #define TPD_DEBUG(a, arg...) \
-	pr_err(TPD_DEVICE ":[%s:%d] " a, __func__, __LINE__, ##arg)
+	pr_info(TPD_DEVICE ":[%s:%d] " a, __func__, __LINE__, ##arg)
 #else
 #define TPD_DEBUG(arg...)
 #endif
@@ -161,8 +161,13 @@ extern int tpd_em_spl_num;
 extern int tpd_em_pressure_threshold;
 extern struct tpd_device *tpd;
 extern void tpd_get_dts_info(void);
+#ifdef CONFIG_TOUCHSCREEN_HIMAX_CHIPSET_8789P1_8185P3
+#define GTP_RST_PORT    2
+#define GTP_INT_PORT    1
+#else
 #define GTP_RST_PORT    0
 #define GTP_INT_PORT    1
+#endif
 extern void tpd_gpio_as_int(int pin);
 extern void tpd_gpio_output(int pin, int level);
 extern const struct of_device_id touch_of_match[];

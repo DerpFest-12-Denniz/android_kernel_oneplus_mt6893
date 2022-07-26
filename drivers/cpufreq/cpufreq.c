@@ -32,6 +32,10 @@
 #include <linux/tick.h>
 #include <trace/events/power.h>
 
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+#include <linux/task_sched_info.h>
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
+
 static LIST_HEAD(cpufreq_policy_list);
 
 static inline bool policy_is_inactive(struct cpufreq_policy *policy)
@@ -201,14 +205,6 @@ struct cpufreq_policy *cpufreq_cpu_get_raw(unsigned int cpu)
 }
 EXPORT_SYMBOL_GPL(cpufreq_cpu_get_raw);
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-struct list_head *get_cpufreq_policy_list(void)
-{
-	return &cpufreq_policy_list;
-}
-EXPORT_SYMBOL(get_cpufreq_policy_list);
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
 unsigned int cpufreq_generic_get(unsigned int cpu)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_get_raw(cpu);
@@ -351,8 +347,12 @@ static void __cpufreq_notify_transition(struct cpufreq_policy *policy,
 		cpufreq_times_record_transition(policy, freqs->new);
 		srcu_notifier_call_chain(&cpufreq_transition_notifier_list,
 				CPUFREQ_POSTCHANGE, freqs);
-		if (likely(policy) && likely(policy->cpu == freqs->cpu))
+		if (likely(policy) && likely(policy->cpu == freqs->cpu)) {
 			policy->cur = freqs->new;
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+		update_freq_info(policy);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
+		}
 		break;
 	}
 }
@@ -414,8 +414,8 @@ wait:
 	policy->transition_task = current;
 
 	spin_unlock(&policy->transition_lock);
-#if defined(CONFIG_MACH_MT6893)
-#else
+#if !defined(CONFIG_MACH_MT6893) && !defined(CONFIG_MACH_MT6877) \
+	&& !defined(CONFIG_MACH_MT6781) && !defined(CONFIG_MACH_MT6833)
 	arch_set_freq_scale(policy->cpus, freqs->new, policy->cpuinfo.max_freq);
 #endif
 	arch_set_max_freq_scale(policy->cpus, policy->max);
@@ -889,19 +889,6 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_HEALTHINFO
-static ssize_t show_freq_change_info(struct cpufreq_policy *policy, char *buf)
-{
-	ssize_t i = 0;
-
-	i += sprintf(buf, "%u,%s\n", policy->org_max, policy->change_comm);
-
-	return i;
-}
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -912,11 +899,6 @@ cpufreq_freq_attr_ro(scaling_cur_freq);
 cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_HEALTHINFO
-cpufreq_freq_attr_ro(freq_change_info);
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
 cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
@@ -934,11 +916,6 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_HEALTHINFO
-	&freq_change_info.attr,
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
 	NULL
 };
 
@@ -2253,11 +2230,7 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 
 	pr_debug("setting new policy for CPU %u: %u - %u kHz\n",
 		 new_policy->cpu, new_policy->min, new_policy->max);
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_HEALTHINFO
-	policy->org_max = new_policy->max;
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+
 	memcpy(&new_policy->cpuinfo, &policy->cpuinfo, sizeof(policy->cpuinfo));
 
 	/*
@@ -2291,11 +2264,9 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	policy->min = new_policy->min;
 	policy->max = new_policy->max;
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_HEALTHINFO
-	strncpy(policy->change_comm, current->comm, TASK_COMM_LEN);
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	update_freq_limit_info(policy);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 
 	arch_set_max_freq_scale(policy->cpus, policy->max);
 	arch_set_min_freq_scale(policy->cpus, policy->min);

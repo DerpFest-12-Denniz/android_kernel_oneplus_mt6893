@@ -113,8 +113,3 @@ subdir-ccflags-y += -DODM_WT_EDIT
 obj-$(CONFIG_TOUCHPANEL_OPLUS) += oplus_touchscreen/
 obj-$(CONFIG_TOUCHPANEL_OPLUS) += touch.o
 #endif /* OPLUS_FEATURE_TP_BASIC */
-ifndef CONFIG_TOUCHPANEL_OPLUS
-obj-$(CONFIG_OPLUS_CHARGER_MTK6785)	+= avoid_build_error.o
-endif
-obj-$(CONFIG_OPLUS_CHARGER_MTK6769)      += avoid_build_error.o
-

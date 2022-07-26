@@ -36,7 +36,11 @@
 #include "protocol.h"
 #include "client.h"
 #include "build_tag.h"
-#include "public/mc_linux_api.h"
+
+#ifdef MC_TEE_HOTPLUG
+#include <linux/cpuhotplug.h>
+#endif
+
 /* Default entry for our driver in device tree */
 #ifndef MC_DEVICE_PROPNAME
 #define MC_DEVICE_PROPNAME "trustonic,mobicore"
@@ -155,14 +159,6 @@ end:
 	mutex_unlock(&buf->mutex);
 	return ret;
 }
-
-void fp_bind_tee_core(bool enable)
-{
-#if defined(BIG_CORE_SWITCH_AFFINITY_MASK)
-	set_tee_worker_threads_on_big_core(enable);
-#endif
-}
-EXPORT_SYMBOL(fp_bind_tee_core);
 
 int debug_generic_open(struct inode *inode, struct file *file)
 {
@@ -433,6 +429,10 @@ static int mobicore_start(void)
 		mc_dev_err(ret, "PM notifier register failed");
 		goto err_pm_notif;
 	}
+#endif
+#ifdef MC_TEE_HOTPLUG
+	ret = cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "Trustonic",
+				nq_cpu_on, nq_cpu_off);
 #endif
 
 	ret = protocol_start();

@@ -161,6 +161,10 @@ void exec_low_battery_callback(unsigned int thd)
 			low_battery_level = LOW_BATTERY_LEVEL_1;
 		else if (thd == POWER_INT2_VOLT)
 			low_battery_level = LOW_BATTERY_LEVEL_2;
+#ifdef LOW_BATTERY_PT_SETTING_V2
+		else if (thd == POWER_INT3_VOLT)
+			low_battery_level = LOW_BATTERY_LEVEL_3;
+#endif
 		g_low_battery_level = low_battery_level;
 		for (i = 0; i < ARRAY_SIZE(lbcb_tb); i++) {
 			if (lbcb_tb[i].lbcb != NULL)
@@ -205,7 +209,13 @@ void exec_low_battery_callback_ext(unsigned int thd)
 void low_battery_protect_init(void)
 {
 	int ret = 0;
+#ifdef LOW_BATTERY_PT_SETTING_V2
+	unsigned int volt_arr[4] = {3300, 3100, 2900, 2700};
 
+	ret = lbat_user_register_ext(&lbat_pt, "power throttling",
+				     volt_arr, ARRAY_SIZE(volt_arr),
+				     exec_low_battery_callback);
+#else
 	ret = lbat_user_register(&lbat_pt, "power throttling"
 			, POWER_INT0_VOLT, POWER_INT1_VOLT
 			, POWER_INT2_VOLT, exec_low_battery_callback);
@@ -213,6 +223,7 @@ void low_battery_protect_init(void)
 	ret = lbat_user_register(&lbat_pt_ext, "power throttling ext"
 		, POWER_INT0_VOLT_EXT, POWER_INT1_VOLT_EXT
 		, POWER_INT2_VOLT_EXT, exec_low_battery_callback_ext);
+#endif
 
 #if PMIC_THROTTLING_DLPT_UT
 	ret = lbat_user_register(&lbat_test1, "test1",
@@ -413,7 +424,6 @@ static irqreturn_t fg_cur_h_int_handler(int irq, void *data)
 		, pmic_get_register_value(PMIC_RG_INT_EN_FG_CUR_H)
 		, pmic_get_register_value(PMIC_RG_INT_EN_FG_CUR_L));
 #else
-/*
 	PMICLOG("Reg[0x%x]=0x%x, Reg[0x%x]=0x%x, Reg[0x%x]=0x%x\n",
 		PMIC_FG_CUR_HTH_ADDR,
 		upmu_get_reg_value(PMIC_FG_CUR_HTH_ADDR),
@@ -421,8 +431,6 @@ static irqreturn_t fg_cur_h_int_handler(int irq, void *data)
 		upmu_get_reg_value(PMIC_FG_CUR_LTH_ADDR),
 		PMIC_RG_INT_EN_FG_CUR_H_ADDR,
 		upmu_get_reg_value(PMIC_RG_INT_EN_FG_CUR_H_ADDR));
-*/
-//#endif
 #endif
 	return IRQ_HANDLED;
 }
@@ -447,7 +455,6 @@ static irqreturn_t fg_cur_l_int_handler(int irq, void *data)
 		, pmic_get_register_value(PMIC_RG_INT_EN_FG_CUR_H)
 		, pmic_get_register_value(PMIC_RG_INT_EN_FG_CUR_L));
 #else
-/*
 	PMICLOG("Reg[0x%x]=0x%x, Reg[0x%x]=0x%x, Reg[0x%x]=0x%x\n",
 		PMIC_FG_CUR_HTH_ADDR,
 		upmu_get_reg_value(PMIC_FG_CUR_HTH_ADDR),
@@ -455,8 +462,6 @@ static irqreturn_t fg_cur_l_int_handler(int irq, void *data)
 		upmu_get_reg_value(PMIC_FG_CUR_LTH_ADDR),
 		PMIC_RG_INT_EN_FG_CUR_H_ADDR,
 		upmu_get_reg_value(PMIC_RG_INT_EN_FG_CUR_H_ADDR));
-*/
-//#endif
 #endif
 	return IRQ_HANDLED;
 }
@@ -1885,7 +1890,7 @@ void pmic_throttling_dlpt_suspend(void)
 #ifdef BATTERY_OC_PROTECT
 	disable_irq_nosync(fg_cur_h_irq);
 	disable_irq_nosync(fg_cur_l_irq);
-/*
+
 	PMICLOG("Reg[0x%x]=0x%x, Reg[0x%x]=0x%x, Reg[0x%x]=0x%x\n",
 		PMIC_FG_CUR_HTH_ADDR,
 		upmu_get_reg_value(PMIC_FG_CUR_HTH_ADDR),
@@ -1893,8 +1898,6 @@ void pmic_throttling_dlpt_suspend(void)
 		upmu_get_reg_value(PMIC_FG_CUR_LTH_ADDR),
 		PMIC_RG_INT_EN_FG_CUR_H_ADDR,
 		upmu_get_reg_value(PMIC_RG_INT_EN_FG_CUR_H_ADDR));
-*/
-//#endif
 #endif
 }
 
@@ -1904,7 +1907,7 @@ void pmic_throttling_dlpt_resume(void)
 #ifdef BATTERY_OC_PROTECT
 	enable_irq(fg_cur_h_irq);
 	enable_irq(fg_cur_l_irq);
-/*
+
 	PMICLOG("Reg[0x%x]=0x%x, Reg[0x%x]=0x%x, Reg[0x%x]=0x%x\n",
 		PMIC_FG_CUR_HTH_ADDR,
 		upmu_get_reg_value(PMIC_FG_CUR_HTH_ADDR),
@@ -1912,8 +1915,6 @@ void pmic_throttling_dlpt_resume(void)
 		upmu_get_reg_value(PMIC_FG_CUR_LTH_ADDR),
 		PMIC_RG_INT_EN_FG_CUR_H_ADDR,
 		upmu_get_reg_value(PMIC_RG_INT_EN_FG_CUR_H_ADDR));
-*/
-//#endif
 #endif
 }
 
@@ -2007,7 +2008,7 @@ int pmic_throttling_dlpt_init(struct platform_device *pdev)
 {
 #if (CONFIG_MTK_GAUGE_VERSION == 30)
 	struct device_node *np;
-	u32 val;
+	u32 val = 0;
 	char *path;
 
 	path = "/battery";

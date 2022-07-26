@@ -395,8 +395,14 @@ int pe40_init_state(void)
 		chr_err("[pe40_i0] err:1 %d\n", ret);
 		goto retry;
 	}
+	/* disable charger */
+#ifdef OPLUS_FEATURE_CHG_BASIC
+    charger_enable_powerpath(false);
+#else
+    charger_force_disable_powerpath(true);
+#endif
 
-	
+
 	msleep(500);
 
 	cap.output_ma = 0;
@@ -426,7 +432,13 @@ int pe40_init_state(void)
 		pe4->pmic_vbus, pe4->TA_vbus, pe4->vbus_cali,
 		cap.output_ma);
 
-	
+	/*enable charger*/
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	charger_enable_powerpath(true);
+#else
+    charger_force_disable_powerpath(false);
+#endif
+
 	msleep(100);
 
 	if (cap.output_ma > 100) {

@@ -49,8 +49,10 @@
 #define BTSNRPA_TAP_OVER_CRITICAL_LOW	4397119	/* base on 100K NTC temp
 						 *default value -40 deg
 						 */
+
 #define BTSNRPA_RAP_PULL_UP_VOLTAGE	1800	/* 1.8V ,pull up voltage */
 #define BTSNRPA_RAP_NTC_TABLE		7
+
 #define BTSNRPA_RAP_ADC_CHANNEL		AUX_IN2_NTC
 #ifdef OPLUS_FEATURE_CAMERA_COMMON
 #define AUX_IN3_NTC							(3)

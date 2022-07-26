@@ -1823,7 +1823,8 @@ static struct sched_domain *build_sched_domain(struct sched_domain_topology_leve
 
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 extern void update_ux_sched_cputopo(void);
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
 /*
  * Build sched domains for a given set of CPUs and attach the sched domains
  * to the individual CPUs
@@ -1908,7 +1909,7 @@ build_sched_domains(const struct cpumask *cpu_map, struct sched_domain_attr *att
 	ret = 0;
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	update_ux_sched_cputopo();
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 error:
 	__free_domain_allocs(&d, alloc_state, cpu_map);
 	return ret;

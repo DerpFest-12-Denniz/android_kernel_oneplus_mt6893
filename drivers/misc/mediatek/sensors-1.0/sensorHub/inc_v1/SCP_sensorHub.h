@@ -18,10 +18,10 @@
 
 #include <linux/ioctl.h>
 #include <linux/atomic.h>
-#include <linux/init.h>
 #ifdef OPLUS_FEATURE_SENSOR_ALGORITHM
-#include <oplus_sensor.h>
+#include <oplussensor.h>
 #endif /*OPLUS_FEATURE_SENSOR_ALGORITHM*/
+
 #if defined(CONFIG_MTK_SCP_SENSORHUB_V1)
 #error CONFIG_MTK_SCP_SENSORHUB_V1 should not configed
 #elif defined(CONFIG_NANOHUB)

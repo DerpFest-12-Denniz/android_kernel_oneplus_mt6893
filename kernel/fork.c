@@ -109,15 +109,13 @@
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 #include <linux/sched_assist/sched_assist_fork.h>
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
 #include <mt-plat/mtk_pidmap.h>
 #ifdef CONFIG_MTK_TASK_TURBO
 #include <mt-plat/turbo_common.h>
 #endif
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 #include <linux/healthinfo/jank_monitor.h>
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 
 /*
@@ -131,9 +129,9 @@
 #define MAX_THREADS FUTEX_TID_MASK
 
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
-/* update user tasklist */
 extern void update_user_tasklist(struct task_struct *tsk);
 #endif
+
 /*
  * Protected counters by write_lock_irq(&tasklist_lock)
  */
@@ -184,6 +182,10 @@ static inline void free_task_struct(struct task_struct *tsk)
 #endif
 
 #ifndef CONFIG_ARCH_THREAD_STACK_ALLOCATOR
+
+#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
+extern void uid_perf_work_add(struct task_struct *task, bool force);
+#endif
 
 /*
  * Allocate pages if THREAD_SIZE is >= PAGE_SIZE, otherwise use a
@@ -1918,16 +1920,14 @@ static __latent_entropy struct task_struct *copy_process(
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	init_task_ux_info(p);
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
+#if defined (OPLUS_FEATURE_HEALTHINFO) && defined (CONFIG_OPLUS_JANK_INFO)
 	p->jank_trace = 0;
 	memset(&p->jank_info, 0, sizeof(struct jank_monitor_info));
-#endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
-
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	p->fpack = NULL;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	p->wake_tid = 0;
+	p->running_start_time = 0;
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 	/* Perform scheduler related setup. Assign this task to a CPU. */
 	retval = sched_fork(clone_flags, p);
 	if (retval)
@@ -2106,6 +2106,17 @@ static __latent_entropy struct task_struct *copy_process(
 		goto bad_fork_cancel_cgroup;
 	}
 
+#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
+	/* should init uid pevents before task added into any link */
+	memset(p->uid_pevents, 0, sizeof(struct perf_event *) * UID_PERF_EVENTS);
+	memset(p->uid_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
+	memset(p->uid_prev_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
+	memset(p->uid_leaving_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
+	memset(p->uid_group, 0, sizeof(long long) * UID_GROUP_SIZE);
+	memset(p->uid_group_prev_counts, 0, sizeof(long long) * UID_GROUP_SIZE);
+	memset(p->uid_group_snapshot_prev_counts, 0, sizeof(long long) * UID_GROUP_SIZE);
+#endif
+
 	if (likely(p->pid)) {
 		ptrace_init_task(p, (clone_flags & CLONE_PTRACE) || trace);
 
@@ -2131,7 +2142,6 @@ static __latent_entropy struct task_struct *copy_process(
 			list_add_tail(&p->sibling, &p->real_parent->children);
 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
-			/* init user tasklist */
 			INIT_LIST_HEAD(&p->user_tasks);
 			update_user_tasklist(p);
 #endif
@@ -2165,6 +2175,10 @@ static __latent_entropy struct task_struct *copy_process(
 	mtk_pidmap_update(p);
 	uprobe_copy_process(p, clone_flags);
 
+#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
+	if (!IS_ERR(p))
+		uid_perf_work_add(p, false);
+#endif
 	return p;
 
 bad_fork_cancel_cgroup:

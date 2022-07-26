@@ -124,6 +124,7 @@ u16 rtc_spare_reg[RTC_SPAR_NUM][3] = {
 #endif /*OPLUS_FEATURE_AGINGTEST */
 #ifdef CONFIG_OPLUS_CHARGER_MTK6771
 	{RTC_SPAR0, 0x01, 15},
+#endif /* OPLUS_BUG_STABILITY */
 };
 
 static int rtc_eosc_cali_td = 8;

@@ -10,7 +10,6 @@
 #define TIMED_OUTPUT
 #endif
 
-#define OPLUS_FEATURE_CHG_BASIC
 /*********************************************************
  *
  * aw86907.h
@@ -52,6 +51,7 @@
 #define AW86907_MAX_BST_VOL                  0x3f	/* bst_vol-> six bit */
 
 
+#ifdef OPLUS_FEATURE_CHG_BASIC
 /* 0832 */
 #define AW86907_0832_HAPTIC_F0_PRE                  2350
 #define AW86907_0832_HAPTIC_F0_CALI_PERCEN          7
@@ -89,6 +89,7 @@
 
 #define AW86907_0815_HAPTIC_D2S_GAIN                0x04
 
+#endif
 
 
 #define AW86907_RTP_NUM      6
@@ -505,6 +506,9 @@ struct aw86907 {
     struct work_struct  motor_old_test_work;
     unsigned int motor_old_test_mode;
     atomic_t qos_cnt;
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	bool support_promise_vib;
+#endif
 };
 
 struct aw86907_container{
@@ -537,12 +541,13 @@ struct aw86907_que_seq {
 #define AW86907_HAPTIC_SET_GAIN            _IOWR(AW86907_HAPTIC_IOCTL_MAGIC, 6, unsigned int)
 #define AW86907_HAPTIC_PLAY_REPEAT_SEQ     _IOWR(AW86907_HAPTIC_IOCTL_MAGIC, 7, unsigned int)
 
-#define OPLUS_F0_VAL_MAX_0815                     1800
-#define OPLUS_F0_VAL_MIN_0815                     1600
-#define OPLUS_F0_VAL_MAX_0832                     2350
-#define OPLUS_F0_VAL_MIN_0832                     2250
-#define OPLUS_F0_VAL_MAX_0833                     2380
-#define OPLUS_F0_VAL_MIN_0833                     2260
+#ifdef OPLUS_FEATURE_CHG_BASIC
+#define F0_VAL_MAX_0815                     1800
+#define F0_VAL_MIN_0815                     1600
+#define F0_VAL_MAX_0832                     2350
+#define F0_VAL_MIN_0832                     2250
+#define F0_VAL_MAX_0833                     2380
+#define F0_VAL_MIN_0833                     2260
 
 #define AW86907_HAPTIC_BASE_VOLTAGE          6000
 #define AW86907_HAPTIC_MAX_VOLTAGE           10000
@@ -555,23 +560,23 @@ struct aw86907_que_seq {
 
 //#define AW86907_HAPTIC_RAM_VBAT_COMP_GAIN  0x80
 
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_1        1
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_2        2
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_3        3
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_4        4
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_5        5
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_6        6
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_7        7
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_8        8
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_9        9
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_10       10
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_11       11
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_12       12
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_13       13
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_14       14
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRADITIONAL_15       15
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_1        1
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_2        2
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_3        3
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_4        4
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_5        5
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_6        6
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_7        7
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_8        8
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_9        9
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_10       10
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_11       11
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_12       12
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_13       13
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_14       14
+#define AW86907_WAVEFORM_INDEX_TRADITIONAL_15       15
 
-#define AW86907_OPLUS_RTP_LONG_SOUND_INDEX                44
+#define AW86907_RTP_LONG_SOUND_INDEX                44
 #define AUDIO_READY_STATUS                               1024
 #define RINGTONES_START_INDEX                            1
 #define RINGTONES_END_INDEX                              40
@@ -579,20 +584,20 @@ struct aw86907_que_seq {
 #define RINGTONES_PURE_INDEX                             49
 #define NEW_RING_START                                   118
 #define NEW_RING_END                                     160
-#define REALME_RING_START                                161
-#define REALME_RING_END                                  170
+#define OPLUS_RING_START                                161
+#define OPLUS_RING_END                                  170
 #define OPLUS_NEW_RING_1_START                           201
 #define OPLUS_NEW_RING_1_END                             280
 #define OPLUS_NEW_RING_2_START                           292
 #define OPLUS_NEW_RING_2_END                             293
 
 
-#define AW86907_OPLUS_WAVEFORM_INDEX_CS_PRESS             16
-#define AW86907_OPLUS_WAVEFORM_INDEX_TRANSIENT            8
-#define AW86907_OPLUS_WAVEFORM_INDEX_SINE_CYCLE           9
-#define AW86907_OPLUS_WAVEFORM_INDEX_HIGH_TEMP            51
-#define AW86907_OPLUS_WAVEFORM_INDEX_OLD_STEADY           52
-#define AW86907_OPLUS_WAVEFORM_INDEX_LISTEN_POP           53
+#define AW86907_WAVEFORM_INDEX_CS_PRESS             16
+#define AW86907_WAVEFORM_INDEX_TRANSIENT            8
+#define AW86907_WAVEFORM_INDEX_SINE_CYCLE           9
+#define AW86907_WAVEFORM_INDEX_HIGH_TEMP            51
+#define AW86907_WAVEFORM_INDEX_OLD_STEADY           52
+#define AW86907_WAVEFORM_INDEX_LISTEN_POP           53
 
 
 enum aw86907_haptic_custom_level {
@@ -618,6 +623,7 @@ enum aw86907_haptic_motor_old_test_mode {
 };
 
 
+#endif
 
 #endif
 

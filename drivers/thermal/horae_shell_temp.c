@@ -195,6 +195,7 @@ static int proc_shell_open(struct inode *inode, struct file *file)
 	return single_open(file, proc_shell_show, NULL);
 }
 
+
 static const struct file_operations proc_shell_fops = {
 	.open = proc_shell_open,
 	.write = proc_shell_write,
@@ -225,3 +226,4 @@ static void __exit horae_shell_exit(void)
 
 module_init(horae_shell_init);
 module_exit(horae_shell_exit);
+MODULE_LICENSE("GPL v2");

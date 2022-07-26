@@ -86,12 +86,7 @@
 #include <linux/scatterlist.h>
 
 //#ifdef OPLUS_FEATURE_NWPOWER
-void (*match_ipa_ip_wakeup)(int type, struct sk_buff *skb) = NULL;
-EXPORT_SYMBOL(match_ipa_ip_wakeup);
-void (*match_ipa_tcp_wakeup)(int type, struct sock *sk) = NULL;
-EXPORT_SYMBOL(match_ipa_tcp_wakeup);
-void (*ipa_schedule_work)(void) = NULL;
-EXPORT_SYMBOL(ipa_schedule_work);
+#include <net/oplus_nwpower.h>
 //#endif /* OPLUS_FEATURE_NWPOWER */
 
 #ifdef CONFIG_TCP_MD5SIG
@@ -1635,9 +1630,7 @@ int tcp_v4_rcv(struct sk_buff *skb)
 	int ret;
 
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (match_ipa_ip_wakeup != NULL) {
-		match_ipa_ip_wakeup(1, skb);
-	}
+	oplus_match_ipa_ip_wakeup(OPLUS_TCP_TYPE_V4, skb);
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 
 	if (skb->pkt_type != PACKET_HOST)
@@ -1673,9 +1666,7 @@ lookup:
 		goto no_tcp_socket;
 
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (match_ipa_tcp_wakeup != NULL) {
-		match_ipa_tcp_wakeup(1, sk);
-	}
+	oplus_match_ipa_tcp_wakeup(OPLUS_TCP_TYPE_V4, sk);
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 
 process:
@@ -1788,9 +1779,7 @@ bad_packet:
 
 discard_it:
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (ipa_schedule_work != NULL) {
-		ipa_schedule_work();
-	}
+	oplus_ipa_schedule_work();
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 	/* Discard frame. */
 	kfree_skb(skb);
@@ -2518,11 +2507,7 @@ static int __net_init tcp_sk_init(struct net *net)
 	net->ipv4.sysctl_tcp_reordering = TCP_FASTRETRANS_THRESH;
 	net->ipv4.sysctl_tcp_retries1 = TCP_RETR1;
 	net->ipv4.sysctl_tcp_retries2 = TCP_RETR2;
-#ifndef OPLUS_BUG_STABILITY
 	net->ipv4.sysctl_tcp_orphan_retries = 0;
-#else  /* OPLUS_BUG_STABILITY */
-	net->ipv4.sysctl_tcp_orphan_retries = TCP_ORPHAN_RETRIES;
-#endif /* OPLUS_BUG_STABILITY */
 	net->ipv4.sysctl_tcp_fin_timeout = TCP_FIN_TIMEOUT;
 	net->ipv4.sysctl_tcp_notsent_lowat = UINT_MAX;
 	net->ipv4.sysctl_tcp_tw_reuse = 0;
@@ -2537,9 +2522,6 @@ static int __net_init tcp_sk_init(struct net *net)
 	net->ipv4.sysctl_tcp_timestamps = 1;
 	net->ipv4.sysctl_tcp_default_init_rwnd = TCP_INIT_CWND * 2;
 
-	#ifdef OPLUS_BUG_STABILITY
-	net->ipv4.sysctl_tcp_random_timestamp = 1;
-	#endif /* OPLUS_BUG_STABILITY */
 	return 0;
 fail:
 	tcp_sk_exit(net);

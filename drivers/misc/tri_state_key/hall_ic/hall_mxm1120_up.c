@@ -21,9 +21,6 @@
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 #include <linux/miscdevice.h>
-#include <linux/uaccess.h>
-#include <linux/gpio.h>
-#include <linux/of_gpio.h>
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/regulator/consumer.h>
@@ -38,7 +35,7 @@
 #define M1120_INTERRUPT_TYPE	M1120_VAL_INTSRS_INTTYPE_BESIDE
 /*#define M1120_INTERRUPT_TYPE	M1120_VAL_INTSRS_INTTYPE_WITHIN*/
 #define M1120_SENSITIVITY_TYPE	M1120_VAL_INTSRS_SRS_10BIT_0_068mT
-#define M1120_PERSISTENCE_COUNT	M1120_VAL_PERSINT_COUNT(15)
+#define M1120_PERSISTENCE_COUNT	(15<<4)
 #define M1120_OPERATION_FREQUENCY	M1120_VAL_OPF_FREQ_80HZ
 #define M1120_OPERATION_RESOLUTION	M1120_VAL_OPF_BIT_10
 #define M1120_DETECT_RANGE_HIGH	(60)/*Need change via test.*/
@@ -135,7 +132,6 @@ static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr, u8 *da
 	mutex_unlock(&hall_m1120_up_i2c_mutex);
 
 	return err;
-
 }
 
 static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr, u8 *data, u8 len)
@@ -170,7 +166,7 @@ static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr, u8 *d
 	if (err < 0)
 		TRI_KEY_ERR("send command error!! %d\n", err);
 
-	//store reg written
+	/* store reg written */
 	if (len == 1) {
 		switch (addr) {
 		case M1120_REG_PERSINT:
@@ -502,7 +498,7 @@ static int m1120_input_dev_init(struct m1120_data_t *p_data)
 	input_set_drvdata(dev, p_data);
 	input_set_capability(dev, M1120_EVENT_TYPE, M1120_EVENT_CODE);
 #else
-#error ("[ERR] M1120_EVENT_TYPE is not defined.")
+	TRI_KEY_ERR("[ERR] M1120_EVENT_TYPE is not defined(%d)", err);
 #endif
 
 	err = input_register_device(dev);
@@ -637,7 +633,7 @@ static int tri_key_m1120_parse_dt(struct device *dev,
 		atomic_set(&p_data->atm.delay, temp_val);
 	}
 
-	p_data->int_en = of_property_read_bool(np, "magnachip,use-interrupt");
+	p_data->irq_en = of_property_read_bool(np, "magnachip,use-interrupt");
 
 	p_data->igpio = of_get_named_gpio_flags(dev->of_node,
 			"magnachip,gpio-int", 0, NULL);
@@ -731,7 +727,6 @@ static int m1120_get_irq_state(void)
 
 static bool m1120_update_threshold(int position, short lowthd, short highthd)
 {
-
 	u8 lthh, lthl, hthh, hthl;
 	int err = 0;
 
@@ -870,7 +865,6 @@ static int m1120_set_detection_mode_1(u8 mode)
 
 static int m1120_set_reg_1(int reg, int val)
 {
-
 	u8 data = (u8)val;
 
 	TRI_KEY_LOG("======> %s", __func__);
@@ -901,7 +895,7 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 	struct extcon_dev_data	*hall_dev = NULL;
 	int                  err = 0;
 
-	TRI_KEY_LOG("allocation memory for p_m1120_data up %s\n", __func__);
+	TRI_KEY_LOG("allocation memory for p_m1120_data up %s  ======== =========ccy   up\n", __func__);
 	/*(1) allocation memory for p_m1120_data*/
 	p_data = kzalloc(sizeof(struct m1120_data_t), GFP_KERNEL);
 	if (!p_data) {
@@ -919,7 +913,7 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 	mutex_init(&p_data->mtx.enable);
 	mutex_init(&p_data->mtx.data);
 	p_data->power_enabled = false;
-	TRI_KEY_LOG("init mutex variable\n");
+	TRI_KEY_LOG("init mutex variable =========ccy   up\n");
 	/*(3) config i2c client*/
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		TRI_KEY_ERR("i2c_check_functionality was failed");
@@ -946,14 +940,13 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 	if (gpio_is_valid(p_data->irq_gpio)) {
 		err = gpio_request(p_data->irq_gpio, "m1120_up_irq");
 		if (err) {
-			TRI_KEY_LOG("unable to request gpio [%d]", p_data->irq_gpio);
+			TRI_KEY_LOG("unable to request gpio [%d]  =========ccy up", p_data->irq_gpio);
 		} else {
 			err = gpio_direction_input(p_data->irq_gpio);
 			msleep(50);
 			p_data->irq = gpio_to_irq(p_data->irq_gpio);
-			TRI_KEY_LOG("======> irq : %d", p_data->irq);
+			TRI_KEY_LOG("======> irq : %d  =========ccy   up", p_data->irq);
 		}
-
 	}
 
 	err = m1120_power_init(p_data);
@@ -976,7 +969,7 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 		TRI_KEY_ERR("m1120_init_device was failed(%d)", err);
 		goto error_1;
 	}
-	TRI_KEY_LOG("%s was found", id->name);
+	TRI_KEY_LOG("%s was found   =========ccy up", id->name);
 
 	/*(8) init input device*/
 	err = m1120_input_dev_init(p_data);
@@ -1043,17 +1036,16 @@ struct i2c_driver m1120_i2c_up_driver = {
 	.id_table   = m1120_i2c_drv_id_table,
 };
 
-
 static int __init tri_key_m1120_driver_init_up(void)
 {
 	int res = 0;
 
-	TRI_KEY_LOG("log %s\n", __func__);
+	TRI_KEY_LOG("log %s  =========ccy\n", __func__);
 	res = i2c_add_driver(&m1120_i2c_up_driver);
-	TRI_KEY_LOG("log %s, res : %d\n", __func__, res);
+	TRI_KEY_LOG("log %s, res : %d   =========ccy\n", __func__, res);
 	return res;
 }
-late_initcall(tri_key_m1120_driver_init_up);
+module_init(tri_key_m1120_driver_init_up);
 
 static void __exit m1120_driver_exit_up(void)
 {

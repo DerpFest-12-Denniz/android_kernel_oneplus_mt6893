@@ -166,6 +166,7 @@ static int proc_gpu_memoryusage_show(struct seq_file *m, void *v)
 	return ret;
 }
 
+#ifdef OPLUS_BUG_STABILITY
 #define P2K(x) ((x) << (PAGE_SHIFT - 10))	/* Converts #Pages to KB */
 int get_gl_mem_by_pid(pid_t pid)
 {
@@ -181,6 +182,7 @@ int get_gl_mem_by_pid(pid_t pid)
 	return ret;
 }
 EXPORT_SYMBOL(get_gl_mem_by_pid);
+#endif
 
 static int kbasep_gpu_memoryusage_debugfs_open(struct inode *in, struct file *file)
 {

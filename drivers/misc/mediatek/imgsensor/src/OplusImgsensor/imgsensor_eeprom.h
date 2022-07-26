@@ -34,4 +34,8 @@ void Eeprom_DataRead(kal_uint8 *uData,
                      kal_uint16 slaveAddr);
 enum IMGSENSOR_RETURN Eeprom_CallWriteService(
                     ACDK_SENSOR_ENGMODE_STEREO_STRUCT * pStereoData);
+enum IMGSENSOR_RETURN Eeprom_DataInit(
+            enum IMGSENSOR_SENSOR_IDX sensor_idx,
+            kal_uint32 sensorID);
+
 #endif

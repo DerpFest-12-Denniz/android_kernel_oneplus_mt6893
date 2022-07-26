@@ -22,7 +22,7 @@
 #define MN29xxx_ID                      0x88
 #define ALS_POLLING_MODE                1
 #define REG_MONITOR                     1
-
+#define DBG_ENABLE                     0
 #define ALS_MAX_LUX_PATCH	            1
 #define ALS_MAX_LUX_LINEARLY            1
 
@@ -36,7 +36,9 @@ static mn29_optical_sensor mn29_sensor;
         pr_err( LOG_TAG " " fmt,  ##__VA_ARGS__);  \
     } while (0);
 #define APS_LOGI(fmt, ...) do { \
+        if (DBG_ENABLE) {  \
         pr_info( LOG_TAG " " fmt,  ##__VA_ARGS__);  \
+        } \
     } while (0);
 
 typedef enum
@@ -960,10 +962,10 @@ int mn29xxx_calibration(struct hf_device *hfdev, int sensor_type){
     APS_LOGE("[mn29xxx_calibration] \n");
     return 0;
 }
-int mn29xxx_config_cali(struct hf_device *hfdev,int sensor_type, int32_t *data){
+int mn29xxx_config_cali(struct hf_device *hfdev,int sensor_type, void *data, uint8_t length){
 	mutex_lock(&gdriver_dev->para_lock);
-	printk(" ---- %s[%d] data = %d----\n", __FUNCTION__, __LINE__,*data);
-	mn29_sensor.als.als_factor = *data;
+	printk(" ---- %s[%d] data = %d----\n", __FUNCTION__, __LINE__,*(int*)data);
+	mn29_sensor.als.als_factor = *(int*)data;
 	mutex_unlock(&gdriver_dev->para_lock);
 	return 0;
 }

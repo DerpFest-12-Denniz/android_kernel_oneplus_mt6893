@@ -868,17 +868,17 @@ int acc_ctrlrequest(struct usb_composite_dev *cdev,
 	u16	w_length = le16_to_cpu(ctrl->wLength);
 	unsigned long flags;
 
-#ifdef OPLUS_FEATURE_CHG_BASIC
-	if (!dev)
-		return -ENODEV;
-#endif
-
 /*
 	printk(KERN_INFO "acc_ctrlrequest "
 			"%02x.%02x v%04x i%04x l%u\n",
 			b_requestType, b_request,
 			w_value, w_index, w_length);
 */
+
+//#ifdef OPLUS_BUG_STABILITY
+	if (!dev)
+		goto err;
+//#endif /*OPLUS_BUG_STABILITY*/
 
 	if (b_requestType == (USB_DIR_OUT | USB_TYPE_VENDOR)) {
 		if (b_request == ACCESSORY_START) {
@@ -938,14 +938,16 @@ int acc_ctrlrequest(struct usb_composite_dev *cdev,
 			value = sizeof(u16);
 			cdev->req->complete = acc_complete_setup_noop;
 			/* clear any string left over from a previous session */
-			memset(dev->manufacturer, 0, sizeof(dev->manufacturer));
-			memset(dev->model, 0, sizeof(dev->model));
-			memset(dev->description, 0, sizeof(dev->description));
-			memset(dev->version, 0, sizeof(dev->version));
-			memset(dev->uri, 0, sizeof(dev->uri));
-			memset(dev->serial, 0, sizeof(dev->serial));
-			dev->start_requested = 0;
-			dev->audio_mode = 0;
+			if (dev) {
+				memset(dev->manufacturer, 0, sizeof(dev->manufacturer));
+				memset(dev->model, 0, sizeof(dev->model));
+				memset(dev->description, 0, sizeof(dev->description));
+				memset(dev->version, 0, sizeof(dev->version));
+				memset(dev->uri, 0, sizeof(dev->uri));
+				memset(dev->serial, 0, sizeof(dev->serial));
+				dev->start_requested = 0;
+				dev->audio_mode = 0;
+			}
 		}
 	}
 

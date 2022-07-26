@@ -282,7 +282,6 @@ enum kmalloc_cache_type {
 
 #ifndef CONFIG_SLOB
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_KMALLOC_DEBUG)
-/* record the kmalloc cache with debug flag, such as SLAB_STORE_USER */
 extern atomic64_t kmalloc_debug_caches[NR_KMALLOC_TYPES][KMALLOC_SHIFT_HIGH + 1];
 extern int kmalloc_debug_enable;
 #endif
@@ -522,8 +521,8 @@ static __always_inline void *kmalloc(size_t size, gfp_t flags)
 
 		if (!index)
 			return ZERO_SIZE_PTR;
+
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_KMALLOC_DEBUG)
-		/* try to kmalloc from kmalloc_debug caches fisrt. */
 		if (unlikely(kmalloc_debug_enable)) {
 			struct kmem_cache *s;
 			s = (struct kmem_cache *)atomic64_read(&kmalloc_debug_caches[kmalloc_type(flags)][index]);

@@ -340,7 +340,6 @@ TRACE_EVENT(rss_stat,
 		__entry->size)
 	);
 
-
 DECLARE_EVENT_CLASS(ion_alloc,
 
 	TP_PROTO(size_t len,

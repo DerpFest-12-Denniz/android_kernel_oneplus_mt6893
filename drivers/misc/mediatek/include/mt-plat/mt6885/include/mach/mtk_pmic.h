@@ -40,7 +40,6 @@
 #endif /* defined(CONFIG_MTK_DISABLE_GAUGE) */
 
 #define POWER_UVLO_VOLT_LEVEL 2600
-
 #define IMAX_MAX_VALUE 5500
 
 #define POWER_INT0_VOLT 3400

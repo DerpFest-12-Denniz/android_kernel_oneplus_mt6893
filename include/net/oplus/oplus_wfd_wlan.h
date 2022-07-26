@@ -1,5 +1,6 @@
 /************************************************************************************
 ** File: - oplus_wfd_wlan.h
+** OPLUS_EDIT
 ** Copyright (C), 2008-2020, OPLUS Mobile Comm Corp., Ltd
 **
 ** Description:
@@ -7,7 +8,7 @@
 **
 ** Version: 1.0
 ** Date :   2020-08-11
-** TAG  :   OPLUS_FEATURE_WIFI_WFD
+** TAG  :   OPLUS_FEATURE_WIFI_OPLUSWFD
 **
 ** ---------------------Revision History: ---------------------
 **  <author>                      <data>     <version >   <desc>

@@ -929,7 +929,7 @@ static void accdet_get_efuse(void)
 	accdet_auxadc_offset = efuseval & 0xFF;
 	if (accdet_auxadc_offset > 128)
 		accdet_auxadc_offset -= 256;
-	accdet_auxadc_offset = (accdet_auxadc_offset >> 1);
+	accdet_auxadc_offset = (accdet_auxadc_offset/2);
 	pr_info("%s efuse=0x%x,auxadc_val=%dmv\n", __func__, efuseval,
 		accdet_auxadc_offset);
 
@@ -1903,8 +1903,6 @@ static void eint_work_callback(void)
 		accdet_thing_in_flag = false;
 		mutex_unlock(&accdet_eint_irq_sync_mutex);
 #ifndef OPLUS_BUG_COMPATIBILITY
-		 * modified for waiting for 6s before disabling micbias,
-		 * delete timer when plug out 3-pole headset */
 		if (accdet_dts.moisture_detect_mode != 0x5)
 #endif /* OPLUS_BUG_COMPATIBILITY */
 			del_timer_sync(&micbias_timer);
@@ -2800,7 +2798,7 @@ static int accdet_get_dts_data(void)
 	/* if we need moisture detection feature or not */
 	accdet_dts.moisture_detect_enable = moisture_detect_enable;
 	/* select moisture detection mode,
-	 * 1: EINT 1.0, 2: EINT1.1, 3: EINT2.0, 4: EINT2.1, 5: EINT2.1_OPLUS
+	 * 1: EINT 1.0, 2: EINT1.1, 3: EINT2.0, 4: EINT2.1, 5: EINT2.1_OPPO
 	 */
 	if (accdet_dts.moisture_detect_enable == 0x1) {
 		accdet_dts.eint_detect_mode = eint_detect_mode;
@@ -3151,8 +3149,13 @@ static void accdet_init_once(void)
 		pmic_write(PMIC_RG_AUDACCDETMICBIAS0PULLLOW_ADDR,
 			reg | RG_ACCDET_MODE_ANA11_MODE2);
 		/* enable analog fast discharge */
+#ifdef OPLUS_ARCH_EXTENDS
+		pmic_write_mset(PMIC_RG_ANALOGFDEN_ADDR,
+			PMIC_RG_ANALOGFDEN_SHIFT, 0x3, 0x2);
+#else
 		pmic_write_mset(PMIC_RG_ANALOGFDEN_ADDR,
 			PMIC_RG_ANALOGFDEN_SHIFT, 0x3, 0x3);
+#endif
 	} else if (accdet_dts.mic_mode == HEADSET_MODE_6) {
 		/* DCC mode Low cost mode with internal bias,
 		 * bit8 = 1 to use internal bias
@@ -3272,15 +3275,15 @@ void accdet_modify_vref_volt(void)
 
 static void accdet_modify_vref_volt_self(void)
 {
+	int error_hw;
+	struct device_node *node = NULL;
 #ifndef OPLUS_BUG_COMPATIBILITY
-	 * modified for waiting for 6s before disabling micbias */
 	/* make sure seq is disable micbias then connect vref2 */
 	u32 cur_AB, eintID;
 #endif /* OPLUS_BUG_COMPATIBILITY */
 
 	if (accdet_dts.moisture_detect_mode == 0x5) {
 #ifndef OPLUS_BUG_COMPATIBILITY
-		 * modified for waiting for 6s before disabling micbias */
 		/* make sure seq is disable micbias then connect vref2 */
 
 		/* check EINT0 status, if plug out,
@@ -3322,6 +3325,18 @@ cur_AB = pmic_read(PMIC_ACCDET_MEM_IN_ADDR) >> ACCDET_STATE_MEM_IN_OFFSET;
 		/* connect VREF2 to EINT0CMP */
 		pmic_write_mset(PMIC_RG_EINTCOMPVTH_ADDR,
 			PMIC_RG_EINTCOMPVTH_SHIFT, 0x3, 0x3);
+		node = of_find_matching_node(node, accdet_of_match);
+		if(!node){
+			pr_notice("accdet %s can't find compatible node\n", __func__);
+		}else{
+			if (0==of_property_read_u32(node, "moisture_disable_error_switch", &error_hw))
+			{
+		       		/* connect VREF2 to EINT0CMP */
+				pr_info("%s accdet LYU VREF2", __func__);
+				pmic_write_mset(PMIC_RG_EINTCOMPVTH_ADDR,
+					PMIC_RG_EINTCOMPVTH_SHIFT, 0x3, 0x2);
+			}
+		}
 		pr_info("%s [0x%x]=0x%x [0x%x]=0x%x\n", __func__,
 			PMIC_RG_EINT0NOHYS_ADDR,
 			pmic_read(PMIC_RG_EINT0NOHYS_ADDR),
@@ -3494,7 +3509,7 @@ int mt_accdet_probe(struct platform_device *dev)
 #ifdef CONFIG_HSKEY_BLOCK
 	INIT_DELAYED_WORK(&hskey_block_work, disable_hskey_block_callback);
 #endif /* CONFIG_HSKEY_BLOCK */
-#endif
+#endif /* OPLUS_BUG_COMPATIBILITY */
 
 #ifdef CONFIG_ACCDET_EINT
 	ret = ext_eint_setup(dev);

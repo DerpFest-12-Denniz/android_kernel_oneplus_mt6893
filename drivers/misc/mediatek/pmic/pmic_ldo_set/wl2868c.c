@@ -15,6 +15,13 @@
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/uaccess.h>
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+#include <linux/printk.h>
+#include <mach/upmu_hw.h>
+#include <mt-plat/upmu_common.h>
+#include <soc/oplus/system/oplus_project.h>
+#include <soc/oplus/device_info.h>
+#endif
 
 #define wl2868c_IO_REG_LIMIT 20
 #define wl2868c_IO_BUFFER_LIMIT 128
@@ -30,6 +37,9 @@
 #define WL2868C_REG_LDO6_VOUT 0x08
 #define WL2868C_REG_LDO7_VOUT 0x09
 #define WL2868C_REG_LDOX_EN 0x0e
+#define PCB_PVT 10
+#define PVT_VIN1_VDD_CUSTOM 1375000
+#define PVT_VIN1_VDD_ORIGIN 1350000
 
 /*
 Hardware operate:
@@ -61,6 +71,7 @@ struct reg_value {
  */
 struct wl2868c_data_t {
     struct i2c_client *i2c_client;
+	int pcb;
     int en_gpio;
     u8 chip_id;
     u8 id_reg;
@@ -150,9 +161,41 @@ int wl2868c_test_i2c_enable(void)
 {
     return wl2868c_data.wl2868_status_flag;
 }
-
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
 /*!
- * wl2868c VOUTPUT_T
+ * wl2868c pcb==10 vin1->1.375V
+ * @param *
+ * @return  others means pmic_config_interface error
+ *     0 means vin1 = vdd_status *
+ */
+int wl2868c_pcb10_vin1(int vdd_status)
+{
+	int ret;
+	int val;
+	/*pr_err("wl2868c_pcb10_vin1 pcb=%d vdd_status=%d\n", wl2868c_data.pcb, vdd_status);*/
+	if (wl2868c_data.pcb == PCB_PVT) {
+		if (vdd_status <= 800000) {
+			pr_err("wl2868c_pcb10_vin1 vdd(%d) is not larger than 800mv\n", vdd_status);
+			return -1;
+		} else {
+			val = ((vdd_status/2)-400000)/6250;
+		}
+		pr_err("wl2868c_pcb10_vin1 val=%d\n", val);
+#ifndef CONFIG_MACH_MT6781
+		ret = pmic_config_interface(MT6359_BUCK_VS2_VOTER_CFG, val, PMIC_RG_BUCK_VS2_VOTER_VOSEL_MASK, PMIC_RG_BUCK_VS2_VOTER_VOSEL_SHIFT);
+#endif
+		if (ret) {
+			pr_err("wl2868c_pcb10_vin1 pmic_config_interface register write error%d!\n", ret);
+			return ret;
+		} else {
+			pr_err("wl2868c_pcb10_vin1 pmic_config_interface register write ret %d!\n", ret);
+			return 0;
+		}
+	}
+	return 0;
+}
+#endif
+ /* wl2868c VOUTPUT_T
  *
  * @param ldo_num ldo number *
  * @param low_or_high low means ldo_num < 3,high means ldo_num >=3 *
@@ -213,12 +256,27 @@ vol_err:
 int wl2868c_voltage_output(unsigned int ldo_num, int vol)
 {
     int ret = 0;
+	u8 ulvo_ctl_reg = 0x24;
+	u8 ulvo_ctl_reg_val = 0x00;
+	wl2868c_read_reg(ulvo_ctl_reg, &ulvo_ctl_reg_val);
+	pr_err("ulvo_ctl_reg_val:%x", ulvo_ctl_reg_val);
+	ulvo_ctl_reg_val |= 0x60;
+	wl2868c_write_reg(ulvo_ctl_reg, ulvo_ctl_reg_val);
+	ulvo_ctl_reg_val = 0x00;
+	wl2868c_read_reg(ulvo_ctl_reg, &ulvo_ctl_reg_val);
+	pr_err("ulvo_ctl_reg_val:%x", ulvo_ctl_reg_val);
     switch (ldo_num)
     {
         case WL2868C_LDO1:
             ret = wl2868c_voltage_output_t(WL2868C_REG_LDO1_VOUT,1,vol,0x01);
             break;
         case WL2868C_LDO2:
+        /*linyuehan@camdrv add for (pvt && pcb == 10 && wl2868c) imx615 preview Signal jamming*/
+		#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+			if (is_project(20181) && (vol != -1)) {
+				wl2868c_pcb10_vin1(PVT_VIN1_VDD_CUSTOM);
+			}
+		#endif
             ret = wl2868c_voltage_output_t(WL2868C_REG_LDO2_VOUT,1,vol,0x02);
             break;
         case WL2868C_LDO3:
@@ -249,21 +307,27 @@ int wl2868c_voltage_output(unsigned int ldo_num, int vol)
  */
 static int wl2868c_power_on(struct device *dev)
 {
-    int ret = 0;
-    wl2868c_data.en_gpio = of_get_named_gpio(dev->of_node, "en-gpios", 0);
-    if (wl2868c_data.en_gpio < 0) {
-        pr_err("wl2868c_data.en_gpio not specified\n");
-    }
-    if (!gpio_is_valid(wl2868c_data.en_gpio) ) {
-        pr_err("wl2868c_data en gpio\n");
-        return -EINVAL;
-    }
-    ret = devm_gpio_request_one(dev, wl2868c_data.en_gpio, GPIOF_OUT_INIT_HIGH, "wl2868c_en");
-    if (ret < 0)
-        pr_err("wl2868c_en request failed %d\n", ret);
-    else
-        pr_err("%s: en request ok\n", __func__);
-    return ret;
+	int ret = 0;
+	/*linyuehan@camdrv add for (pvt && pcb == 10 && wl2868c) imx615 preview Signal jamming*/
+	#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+	wl2868c_data.pcb = get_PCB_Version();
+	#endif
+	wl2868c_data.en_gpio = of_get_named_gpio(dev->of_node, "en-gpios", 0);
+	if (wl2868c_data.en_gpio < 0) {
+		pr_err("wl2868c_data.en_gpio not specified\n");
+	}
+	if (!gpio_is_valid(wl2868c_data.en_gpio)) {
+		pr_err("wl2868c_data en gpio\n");
+		return -EINVAL;
+	}
+	ret = devm_gpio_request_one(dev, wl2868c_data.en_gpio, GPIOF_OUT_INIT_HIGH, "wl2868c_en");
+	if (ret < 0)
+		pr_err("wl2868c_en request failed %d\n", ret);
+	else {
+		pr_err("%s: en request ok\n", __func__);
+		devm_gpio_free(dev, wl2868c_data.en_gpio);
+	}
+	return ret;
 }
 
 /*!
@@ -343,6 +407,12 @@ static struct device_attribute *wl2868c_attributes[] = {
     NULL,
 };
 
+void enable_wl2868c_gpio(int pwr_status)
+{
+	if (wl2868c_data.en_gpio)
+        gpio_set_value(wl2868c_data.en_gpio, pwr_status);
+}
+EXPORT_SYMBOL(enable_wl2868c_gpio);
 int wl2868c_ldo_2_set_voltage(unsigned int set_uV)
 {
     return wl2868c_voltage_output(2, set_uV/1000); /* ldo 2 */
@@ -350,7 +420,17 @@ int wl2868c_ldo_2_set_voltage(unsigned int set_uV)
 
 int wl2868c_ldo_set_disable(unsigned int ldo_num)
 {
-    return wl2868c_voltage_output(ldo_num, -1);
+#if !defined(CONFIG_MTK_PMIC_CHIP_MT6358)
+	int ret;
+	ret = wl2868c_voltage_output(ldo_num, -1);
+	/*linyuehan@camdrv add for (pvt && pcb == 10 && wl2868c) imx615 preview Signal jamming*/
+	if (is_project(20181) && ldo_num == 2) {
+		wl2868c_pcb10_vin1(PVT_VIN1_VDD_ORIGIN);
+	}
+	return ret;
+#else
+        return wl2868c_voltage_output(ldo_num, -1);
+#endif
 }
 int wl2868c_ldo_2_set_disable(void)
 {

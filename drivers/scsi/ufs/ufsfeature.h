@@ -45,11 +45,10 @@
 #include "ufshpb.h"
 #endif
 #include <scsi/scsi_cmnd.h>
-
+#include <linux/proc_fs.h>
 #if defined(CONFIG_UFSTW)
 #include "ufstw.h"
 #endif
-#include <linux/proc_fs.h>
 
 /* Constant value*/
 #define SECTOR					512
@@ -181,12 +180,12 @@ struct ufsf_feature_para {
 	u64 pre_req;
 	u16 hpb_rgns;
 #endif
+
 #if defined(CONFIG_UFSTW)
 	u64 tw_state_ts;
 	u64 tw_enable_ms;
 	u64 tw_disable_ms;
-	u64 tw_write_secs;
-	u64 total_write_secs;
+	u64 tw_amount_W_kb;
 	u64 tw_enable_count;
 	u64 tw_disable_count;
 	u64 tw_setflag_error_count;
@@ -206,6 +205,7 @@ struct ufsf_feature_para {
 	struct proc_dir_entry *ctrl_dir;
 	struct ufsf_feature *ufsf;
 };
+
 
 struct ufs_hba;
 struct ufshcd_lrb;
@@ -252,8 +252,6 @@ void ufsf_tw_set_init_state(struct ufsf_feature *ufsf);
 void ufsf_tw_reset_lu(struct ufsf_feature *ufsf);
 void ufsf_tw_reset_host(struct ufsf_feature *ufsf);
 void ufsf_tw_ee_handler(struct ufsf_feature *ufsf);
-void ufsf_tw_enable(struct ufsf_feature *ufsf, bool enable);
-
 /* for monitor */
 extern struct ufsf_feature_para ufsf_para;
 

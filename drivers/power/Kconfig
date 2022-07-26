@@ -52,6 +52,32 @@ config OPLUS_CHARGER_MTK6785
 	  smart battery.
 	  Set No to disable OPLUS_CHARGER_MTK6785 features
 	  smart battery.
+
+config OPLUS_CHARGER_MTK6781
+	bool "OPLUS_CHARGER_MTK6781"
+	default n
+	help
+	  Set yes to support OPLUS_CHARGER_MTK6781 features
+	  smart battery.
+	  Set No to disable OPLUS_CHARGER_MTK6781 features
+	  smart battery.
+
+config OPLUS_CHARGER_MTK6768
+        bool "OPLUS_CHARGER_MTK6768"
+        default n
+        help
+          Set yes to support OPLUS_CHARGER_MTK6768 features
+          smart battery.
+          Set No to disable OPLUS_CHARGER_MTK6768 features
+
+config OPLUS_CHARGER_MTK6769R
+	bool "OPLUS_CHARGER_MTK6769R"
+	default n
+	help
+	  Set yes to support OPLUS_CHARGER_MTK6769R features
+	  smart battery.
+	  Set No to disable OPLUS_CHARGER_MTK6769R features
+
 config OPLUS_CHARGER_MTK6769
 	bool "OPLUS_CHARGER_MTK6769"
 	default n
@@ -78,6 +104,15 @@ config OPLUS_CHARGER_MTK6893
 	  Set No to disable OPLUS_CHARGER_MTK6893 features
 	  smart battery.
 
+config OPLUS_CHARGER_MTK6877
+	bool "OPLUS_CHARGER_MTK6877"
+	default n
+	help
+	  Set yes to support OPLUS_CHARGER_MTK6877 features
+	  smart battery.
+	  Set No to disable OPLUS_CHARGER_MTK6877 features
+	  smart battery.
+
 config OPLUS_CHARGER_MTK6885
 	bool "OPLUS_CHARGER_MTK6885"
 	default n
@@ -85,6 +120,15 @@ config OPLUS_CHARGER_MTK6885
 	  Set yes to support OPLUS_CHARGER_MTK6885 features
 	  smart battery.
 	  Set No to disable OPLUS_CHARGER_MTK6885 features
+	  smart battery.
+
+config OPLUS_CHARGER_MTK6883
+	bool "OPLUS_CHARGER_MTK6883"
+	default n
+	help
+	  Set yes to support OPLUS_CHARGER_MTK6883 features
+	  smart battery.
+	  Set No to disable OPLUS_CHARGER_MTK6883 features
 	  smart battery.
 
 config OPLUS_CHARGER_MTK6873
@@ -103,6 +147,15 @@ config OPLUS_CHARGER_MTK6853
 	  Set yes to support OPLUS_CHARGER_MTK6853 features
 	  smart battery.
 	  Set No to disable OPLUS_CHARGER_MTK6853 features
+	  smart battery.
+	  
+config OPLUS_CHARGER_MTK6833
+	bool "OPLUS_CHARGER_MTK6833"
+	default n
+	help
+	  Set yes to support OPLUS_CHARGER_MTK6833 features
+	  smart battery.
+	  Set No to disable OPLUS_CHARGER_MTK6833 features
 	  smart battery.
 
 config OPLUS_CHARGER_MATCH_MTKGAUGE
@@ -191,7 +244,8 @@ config MTK_ADDITIONAL_BATTERY_TABLE
 	  smart battery.
 	  Set No to disable BATTERY_ZCV features
 	  smart battery.
-
+#endif /* OPLUS_FEATURE_CHG_BASIC */
+#ifdef OPLUS_FEATURE_CHG_BASIC
 config OPLUS_CALL_MODE_SUPPORT
 	bool "OPLUS call mode support"
 	help
@@ -236,3 +290,10 @@ config OPLUS_CHARGER_MT6370_TYPEC
 	help
 	  Say Y to include support
 
+#endif
+
+config OPLUS_DUAL_BQ_CHARGER
+        bool "OPLUS DOUBLE BQ CHG CONG"
+        default n
+        help
+          Say Y to include support

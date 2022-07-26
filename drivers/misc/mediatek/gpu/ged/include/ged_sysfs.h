@@ -29,7 +29,7 @@
 		__ATTR(_name, 0440,	\
 		_name##_show, NULL)
 
-#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+#ifdef CONFIG_MTK_GPU_OPP_STATS_SUPPORT
 #define KOBJ_OPLUS_ATTR_RO(_name)	\
 	struct kobj_attribute kobj_attr_##_name =	\
 		__ATTR(_name, 0444,	\

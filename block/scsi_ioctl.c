@@ -443,12 +443,12 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 	int err;
 	unsigned int in_len, out_len, bytes, opcode, cmdlen;
 	char *buffer = NULL;
+
 #ifdef OPLUS_FEATURE_STORAGE_TOOL
 // vendor cmd len is 16 and not 10 in spec.
 // in current application ,only samsung health will use this cmd.
 	struct scsi_device *sdev = NULL;
 #endif
-
 	if (!sic)
 		return -EINVAL;
 
@@ -481,6 +481,7 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 	req = scsi_req(rq);
 
 	cmdlen = COMMAND_SIZE(opcode);
+
 #ifdef OPLUS_FEATURE_STORAGE_TOOL
 // vendor cmd len is 16 and not 10 in spec.
 // in current application ,only samsung health will use this cmd.
@@ -491,7 +492,6 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 		cmdlen = 16;
 	}
 #endif
-
 	/*
 	 * get command and data to send to device, if any
 	 */

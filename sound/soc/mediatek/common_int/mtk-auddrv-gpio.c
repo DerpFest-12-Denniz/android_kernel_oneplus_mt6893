@@ -155,10 +155,12 @@ static struct audio_gpio_attr aud_gpios[GPIO_NUM] = {
 	[GPIO_AUD_CLK_MOSI_LOW] = {"aud_clk_mosi_pull_low", false,
 		NULL
 	},
+#ifdef OPLUS_BUG_COMPATIBILITY
 	[GPIO_I2S0_MODE0] = {"audi2s0-mode0", false, NULL},
 	[GPIO_I2S0_MODE1] = {"audi2s0-mode1", false, NULL},
 	[GPIO_I2S1_MODE0] = {"audi2s1-mode0", false, NULL},
 	[GPIO_I2S1_MODE1] = {"audi2s1-mode1", false, NULL},
+#endif /* OPLUS_BUG_COMPATIBILITY */
 };
 #endif
 

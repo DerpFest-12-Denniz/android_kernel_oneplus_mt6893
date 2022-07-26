@@ -76,6 +76,14 @@ static char aw8697_ram_name[5][30] ={
 {"aw8697_haptic_170.bin"},
 };
 
+static char aw8697_ram_name_170_soft[5][30] ={
+{"aw8697_haptic_170_soft.bin"},
+{"aw8697_haptic_170_soft.bin"},
+{"aw8697_haptic_170_soft.bin"},
+{"aw8697_haptic_170_soft.bin"},
+{"aw8697_haptic_170_soft.bin"},
+};
+
 static char aw8697_long_sound_rtp_name[5][30] ={
     {"aw8697_long_sound_168.bin"},
     {"aw8697_long_sound_170.bin"},
@@ -278,38 +286,38 @@ static char aw8697_rtp_name_165Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_lengendary_RTP_69_165Hz.bin"},
 
 
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
+    {"aw8697_Freshmorning_RTP_70_165Hz.bin"},
+    {"aw8697_Peaceful_RTP_71_165Hz.bin"},
+    {"aw8697_Cicada_RTP_72_165Hz.bin"},
+    {"aw8697_Electronica_RTP_73_165Hz.bin"},
+    {"aw8697_Holiday_RTP_74_165Hz.bin"},
+    {"aw8697_Funk_RTP_75_165Hz.bin"},
+    {"aw8697_House_RTP_76_165Hz.bin"},
+    {"aw8697_Temple_RTP_77_165Hz.bin"},
+    {"aw8697_Dreamyjazz_RTP_78_165Hz.bin"},
+    {"aw8697_Modern_RTP_79_165Hz.bin"},
 
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Round_RTP_80_165Hz.bin"},
+    {"aw8697_Rising_RTP_81_165Hz.bin"},
+    {"aw8697_Wood_RTP_82_165Hz.bin"},
+    {"aw8697_Heys_RTP_83_165Hz.bin"},
+    {"aw8697_Mbira_RTP_84_165Hz.bin"},
+    {"aw8697_News_RTP_85_165Hz.bin"},
+    {"aw8697_Peak_RTP_86_165Hz.bin"},
+    {"aw8697_Crisp_RTP_87_165Hz.bin"},
+    {"aw8697_Singingbowls_RTP_88_165Hz.bin"},
+    {"aw8697_Bounce_RTP_89_165Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
     {"aw8697_reserved_92.bin"},
     {"aw8697_reserved_93.bin"},
-    {"aw8697_reserved_94.bin"},
-    {"aw8697_reserved_95.bin"},
-    {"aw8697_reserved_96.bin"},
-    {"aw8697_reserved_97.bin"},
-    {"aw8697_reserved_98.bin"},
-    {"aw8697_reserved_99.bin"},
+	{"aw8697_ALCloudscape_94_165HZ.bin"},
+	{"aw8697_ALGoodenergy_95_165HZ.bin"},
+	{"aw8697_NTblink_96_165HZ.bin"},
+	{"aw8697_NTwhoop_97_165HZ.bin"},
+	{"aw8697_Newfeeling_98_165HZ.bin"},
+	{"aw8697_nature_99_165HZ.bin"},
 
     {"aw8697_soldier_first_kill_RTP_100_165Hz.bin"},
     {"aw8697_soldier_second_kill_RTP_101_165Hz.bin"},
@@ -378,9 +386,9 @@ static char aw8697_rtp_name_165Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_158.bin"},
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
-    {"aw8697_reserved_161.bin"},
-    {"aw8697_reserved_162.bin"},
-    {"aw8697_reserved_163.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_165Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_165Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_165Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -415,9 +423,9 @@ static char aw8697_rtp_name_165Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_195.bin"},
     {"aw8697_reserved_196.bin"},
     {"aw8697_reserved_197.bin"},
-    {"aw8697_reserved_198.bin"},
-    {"aw8697_reserved_199.bin"},
-    {"aw8697_reserved_200.bin"},
+    {"alarm_Pacman_RTP_198_165Hz.bin"},
+    {"notif_Pacman_RTP_199_165Hz.bin"},
+    {"ringtone_Pacman_RTP_200_165Hz.bin"},
     {"ringtone_Alacrity_RTP_201_165Hz.bin"},
     {"ring_Amenity_RTP_202_165Hz.bin"},
     {"ringtone_Blues_RTP_203_165Hz.bin"},
@@ -622,38 +630,38 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_lengendary_RTP_69.bin"},
 
 
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
+    {"aw8697_Freshmorning_RTP_70_170Hz.bin"},
+    {"aw8697_Peaceful_RTP_71_170Hz.bin"},
+    {"aw8697_Cicada_RTP_72_170Hz.bin"},
+    {"aw8697_Electronica_RTP_73_170Hz.bin"},
+    {"aw8697_Holiday_RTP_74_170Hz.bin"},
+    {"aw8697_Funk_RTP_75_170Hz.bin"},
+    {"aw8697_House_RTP_76_170Hz.bin"},
+    {"aw8697_Temple_RTP_77_170Hz.bin"},
+    {"aw8697_Dreamyjazz_RTP_78_170Hz.bin"},
+    {"aw8697_Modern_RTP_79_170Hz.bin"},
 
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Round_RTP_80_170Hz.bin"},
+    {"aw8697_Rising_RTP_81_170Hz.bin"},
+    {"aw8697_Wood_RTP_82_170Hz.bin"},
+    {"aw8697_Heys_RTP_83_170Hz.bin"},
+    {"aw8697_Mbira_RTP_84_170Hz.bin"},
+    {"aw8697_News_RTP_85_170Hz.bin"},
+    {"aw8697_Peak_RTP_86_170Hz.bin"},
+    {"aw8697_Crisp_RTP_87_170Hz.bin"},
+    {"aw8697_Singingbowls_RTP_88_170Hz.bin"},
+    {"aw8697_Bounce_RTP_89_170Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
     {"aw8697_reserved_92.bin"},
     {"aw8697_reserved_93.bin"},
-    {"aw8697_reserved_94.bin"},
-    {"aw8697_reserved_95.bin"},
-    {"aw8697_reserved_96.bin"},
-    {"aw8697_reserved_97.bin"},
-    {"aw8697_reserved_98.bin"},
-    {"aw8697_reserved_99.bin"},
+    {"aw8697_ALCloudscape_94_170HZ.bin"},
+    {"aw8697_ALGoodenergy_95_170HZ.bin"},
+    {"aw8697_NTblink_96_170HZ.bin"},
+    {"aw8697_NTwhoop_97_170HZ.bin"},
+    {"aw8697_Newfeeling_98_170HZ.bin"},
+    {"aw8697_nature_99_170HZ.bin"},
 
     {"aw8697_soldier_first_kill_RTP_100.bin"},
     {"aw8697_soldier_second_kill_RTP_101.bin"},
@@ -724,18 +732,16 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone start */
-    {"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
-    {"aw8697_oplus_tune_RTP_162_235Hz.bin"},
-    {"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_170Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_170Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_170Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
     {"aw8697_reserved_167.bin"},
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
-    {"aw8697_reserved_170.bin"},
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone end */
+    {"aw8697_oplus_gt_RTP_170_170Hz.bin"},
     {"aw8697_reserved_171.bin"},
     {"aw8697_reserved_172.bin"},
     {"aw8697_reserved_173.bin"},
@@ -763,9 +769,9 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_195.bin"},
     {"aw8697_reserved_196.bin"},
     {"aw8697_reserved_197.bin"},
-    {"aw8697_reserved_198.bin"},
-    {"aw8697_reserved_199.bin"},
-    {"aw8697_reserved_200.bin"},
+    {"alarm_Pacman_RTP_198.bin"},
+    {"notif_Pacman_RTP_199.bin"},
+    {"ringtone_Pacman_RTP_200.bin"},
     {"ringtone_Alacrity_RTP_201.bin"},
     {"ring_Amenity_RTP_202.bin"},
     {"ringtone_Blues_RTP_203.bin"},
@@ -969,38 +975,38 @@ static char aw8697_rtp_name_175Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_lengendary_RTP_69_175Hz.bin"},
 
 
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
+    {"aw8697_Freshmorning_RTP_70_175Hz.bin"},
+    {"aw8697_Peaceful_RTP_71_175Hz.bin"},
+    {"aw8697_Cicada_RTP_72_175Hz.bin"},
+    {"aw8697_Electronica_RTP_73_175Hz.bin"},
+    {"aw8697_Holiday_RTP_74_175Hz.bin"},
+    {"aw8697_Funk_RTP_75_175Hz.bin"},
+    {"aw8697_House_RTP_76_175Hz.bin"},
+    {"aw8697_Temple_RTP_77_175Hz.bin"},
+    {"aw8697_Dreamyjazz_RTP_78_175Hz.bin"},
+    {"aw8697_Modern_RTP_79_175Hz.bin"},
 
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Round_RTP_80_175Hz.bin"},
+    {"aw8697_Rising_RTP_81_175Hz.bin"},
+    {"aw8697_Wood_RTP_82_175Hz.bin"},
+    {"aw8697_Heys_RTP_83_175Hz.bin"},
+    {"aw8697_Mbira_RTP_84_175Hz.bin"},
+    {"aw8697_News_RTP_85_175Hz.bin"},
+    {"aw8697_Peak_RTP_86_175Hz.bin"},
+    {"aw8697_Crisp_RTP_87_175Hz.bin"},
+    {"aw8697_Singingbowls_RTP_88_175Hz.bin"},
+    {"aw8697_Bounce_RTP_89_175Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
     {"aw8697_reserved_92.bin"},
     {"aw8697_reserved_93.bin"},
-    {"aw8697_reserved_94.bin"},
-    {"aw8697_reserved_95.bin"},
-    {"aw8697_reserved_96.bin"},
-    {"aw8697_reserved_97.bin"},
-    {"aw8697_reserved_98.bin"},
-    {"aw8697_reserved_99.bin"},
+    {"aw8697_ALCloudscape_94_175HZ.bin"},
+    {"aw8697_ALGoodenergy_95_175HZ.bin"},
+    {"aw8697_NTblink_96_175HZ.bin"},
+    {"aw8697_NTwhoop_97_175HZ.bin"},
+    {"aw8697_Newfeeling_98_175HZ.bin"},
+    {"aw8697_nature_99_175HZ.bin"},
 
     {"aw8697_soldier_first_kill_RTP_100_175Hz.bin"},
     {"aw8697_soldier_second_kill_RTP_101_175Hz.bin"},
@@ -1068,16 +1074,16 @@ static char aw8697_rtp_name_175Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_158.bin"},
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
-    {"aw8697_reserved_161.bin"},
-    {"aw8697_reserved_162.bin"},
-    {"aw8697_reserved_163.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_175Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_175Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_175Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
     {"aw8697_reserved_167.bin"},
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
-    {"aw8697_reserved_170.bin"},
+    {"aw8697_oplus_gt_RTP_170_175Hz.bin"},
     {"aw8697_reserved_171.bin"},
     {"aw8697_reserved_172.bin"},
     {"aw8697_reserved_173.bin"},
@@ -1105,9 +1111,9 @@ static char aw8697_rtp_name_175Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_195.bin"},
     {"aw8697_reserved_196.bin"},
     {"aw8697_reserved_197.bin"},
-    {"aw8697_reserved_198.bin"},
-    {"aw8697_reserved_199.bin"},
-    {"aw8697_reserved_200.bin"},
+    {"alarm_Pacman_RTP_198_175Hz.bin"},
+    {"notif_Pacman_RTP_199_175Hz.bin"},
+    {"ringtone_Pacman_RTP_200_175Hz.bin"},
     {"ringtone_Alacrity_RTP_201_175Hz.bin"},
     {"ring_Amenity_RTP_202_175Hz.bin"},
     {"ringtone_Blues_RTP_203_175Hz.bin"},
@@ -1326,29 +1332,26 @@ static char aw8697_rtp_name_19065_226Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_unstoppable_RTP_67_226Hz.bin"},
     {"aw8697_honor_thousands_kill_RTP_68_226Hz.bin"},
     {"aw8697_honor_lengendary_RTP_69_226Hz.bin"},
-
-
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
-
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Airy_morning_RTP_70_226Hz.bin"},
+    {"aw8697_Temple_morning_RTP_71_226Hz.bin"},
+    {"aw8697_Water_cicidas_RTP_72_226Hz.bin"},
+    {"aw8697_Electro_club_RTP_73_226Hz.bin"},
+    {"aw8697_Vacation_RTP_74_226Hz.bin"},
+    {"aw8697_Jazz_funk_RTP_75_226Hz.bin"},
+    {"aw8697_House_club_RTP_76_226Hz.bin"},
+    {"aw8697_temple_tone_RTP_77_226Hz.bin"},
+    {"aw8697_Jazz_dreamy_RTP_78_226Hz.bin"},
+    {"aw8697_Jazz_modern_RTP_79_226Hz.bin"},
+    {"aw8697_Tone_round_RTP_80_226Hz.bin"},
+    {"aw8697_Digi_rise_RTP_81_226Hz.bin"},
+    {"aw8697_Wood_phone_RTP_82_226Hz.bin"},
+    {"aw8697_Hey_RTP_83_226Hz.bin"},
+    {"aw8697_Zanza_RTP_84_226Hz.bin"},
+    {"aw8697_Info_RTP_85_226Hz.bin"},
+    {"aw8697_Tip_top_RTP_86_226Hz.bin"},
+    {"aw8697_Opop_short_RTP_87_226Hz.bin"},
+    {"aw8697_bowl_bells_RTP_88_226Hz.bin"},
+    {"aw8697_jumpy_RTP_89_226Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
@@ -1428,10 +1431,9 @@ static char aw8697_rtp_name_19065_226Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone start */
-    {"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
-    {"aw8697_oplus_tune_RTP_162_235Hz.bin"},
-    {"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_226Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_226Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_226Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -1439,7 +1441,6 @@ static char aw8697_rtp_name_19065_226Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
     {"aw8697_reserved_170.bin"},
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone end */
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -1521,29 +1522,26 @@ static char aw8697_rtp_name_19065_230Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_unstoppable_RTP_67_230Hz.bin"},
     {"aw8697_honor_thousands_kill_RTP_68_230Hz.bin"},
     {"aw8697_honor_lengendary_RTP_69_230Hz.bin"},
-
-
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
-
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Airy_morning_RTP_70_230Hz.bin"},
+    {"aw8697_Temple_morning_RTP_71_230Hz.bin"},
+    {"aw8697_Water_cicidas_RTP_72_230Hz.bin"},
+    {"aw8697_Electro_club_RTP_73_230Hz.bin"},
+    {"aw8697_Vacation_RTP_74_230Hz.bin"},
+    {"aw8697_Jazz_funk_RTP_75_230Hz.bin"},
+    {"aw8697_House_club_RTP_76_230Hz.bin"},
+    {"aw8697_temple_tone_RTP_77_230Hz.bin"},
+    {"aw8697_Jazz_dreamy_RTP_78_230Hz.bin"},
+    {"aw8697_Jazz_modern_RTP_79_230Hz.bin"},
+    {"aw8697_Tone_round_RTP_80_230Hz.bin"},
+    {"aw8697_Digi_rise_RTP_81_230Hz.bin"},
+    {"aw8697_Wood_phone_RTP_82_230Hz.bin"},
+    {"aw8697_Hey_RTP_83_230Hz.bin"},
+    {"aw8697_Zanza_RTP_84_230Hz.bin"},
+    {"aw8697_Info_RTP_85_230Hz.bin"},
+    {"aw8697_Tip_top_RTP_86_230Hz.bin"},
+    {"aw8697_Opop_short_RTP_87_230Hz.bin"},
+    {"aw8697_bowl_bells_RTP_88_230Hz.bin"},
+    {"aw8697_jumpy_RTP_89_230Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
@@ -1623,10 +1621,9 @@ static char aw8697_rtp_name_19065_230Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone start */
-    {"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
-    {"aw8697_oplus_tune_RTP_162_235Hz.bin"},
-    {"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_230Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_230Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_230Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -1634,7 +1631,6 @@ static char aw8697_rtp_name_19065_230Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
     {"aw8697_reserved_170.bin"},
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone end */
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -1716,29 +1712,26 @@ static char aw8697_rtp_name_19065_234Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_unstoppable_RTP_67_234Hz.bin"},
     {"aw8697_honor_thousands_kill_RTP_68_234Hz.bin"},
     {"aw8697_honor_lengendary_RTP_69_234Hz.bin"},
-
-
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
-
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Airy_morning_RTP_70_234Hz.bin"},
+    {"aw8697_Temple_morning_RTP_71_234Hz.bin"},
+    {"aw8697_Water_cicidas_RTP_72_234Hz.bin"},
+    {"aw8697_Electro_club_RTP_73_234Hz.bin"},
+    {"aw8697_Vacation_RTP_74_234Hz.bin"},
+    {"aw8697_Jazz_funk_RTP_75_234Hz.bin"},
+    {"aw8697_House_club_RTP_76_234Hz.bin"},
+    {"aw8697_temple_tone_RTP_77_234Hz.bin"},
+    {"aw8697_Jazz_dreamy_RTP_78_234Hz.bin"},
+    {"aw8697_Jazz_modern_RTP_79_234Hz.bin"},
+    {"aw8697_Tone_round_RTP_80_234Hz.bin"},
+    {"aw8697_Digi_rise_RTP_81_234Hz.bin"},
+    {"aw8697_Wood_phone_RTP_82_234Hz.bin"},
+    {"aw8697_Hey_RTP_83_234Hz.bin"},
+    {"aw8697_Zanza_RTP_84_234Hz.bin"},
+    {"aw8697_Info_RTP_85_234Hz.bin"},
+    {"aw8697_Tip_top_RTP_86_234Hz.bin"},
+    {"aw8697_Opop_short_RTP_87_234Hz.bin"},
+    {"aw8697_bowl_bells_RTP_88_234Hz.bin"},
+    {"aw8697_jumpy_RTP_89_234Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
@@ -1819,10 +1812,9 @@ static char aw8697_rtp_name_19065_234Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone start */
-    {"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
-    {"aw8697_oplus_tune_RTP_162_235Hz.bin"},
-    {"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
+    {"aw8697_oplus_its_oplus_RTP_161_234Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_234Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_234Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -1830,7 +1822,6 @@ static char aw8697_rtp_name_19065_234Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
     {"aw8697_reserved_170.bin"},
-    /*  Added by zhengzhiwei@rm.bsp, oplus ringtone end */
 };
 
 static char aw8697_rtp_name_19065_237Hz[][AW8697_RTP_NAME_MAX] = {
@@ -1911,29 +1902,26 @@ static char aw8697_rtp_name_19065_237Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_honor_unstoppable_RTP_67_237Hz.bin"},
     {"aw8697_honor_thousands_kill_RTP_68_237Hz.bin"},
     {"aw8697_honor_lengendary_RTP_69_237Hz.bin"},
-
-
-    {"aw8697_reserved_70.bin"},
-    {"aw8697_reserved_71.bin"},
-    {"aw8697_reserved_72.bin"},
-    {"aw8697_reserved_73.bin"},
-    {"aw8697_reserved_74.bin"},
-    {"aw8697_reserved_75.bin"},
-    {"aw8697_reserved_76.bin"},
-    {"aw8697_reserved_77.bin"},
-    {"aw8697_reserved_78.bin"},
-    {"aw8697_reserved_79.bin"},
-
-    {"aw8697_reserved_80.bin"},
-    {"aw8697_reserved_81.bin"},
-    {"aw8697_reserved_82.bin"},
-    {"aw8697_reserved_83.bin"},
-    {"aw8697_reserved_84.bin"},
-    {"aw8697_reserved_85.bin"},
-    {"aw8697_reserved_86.bin"},
-    {"aw8697_reserved_87.bin"},
-    {"aw8697_reserved_88.bin"},
-    {"aw8697_reserved_89.bin"},
+    {"aw8697_Airy_morning_RTP_70_237Hz.bin"},
+    {"aw8697_Temple_morning_RTP_71_237Hz.bin"},
+    {"aw8697_Water_cicidas_RTP_72_237Hz.bin"},
+    {"aw8697_Electro_club_RTP_73_237Hz.bin"},
+    {"aw8697_Vacation_RTP_74_237Hz.bin"},
+    {"aw8697_Jazz_funk_RTP_75_237Hz.bin"},
+    {"aw8697_House_club_RTP_76_237Hz.bin"},
+    {"aw8697_temple_tone_RTP_77_237Hz.bin"},
+    {"aw8697_Jazz_dreamy_RTP_78_237Hz.bin"},
+    {"aw8697_Jazz_modern_RTP_79_237Hz.bin"},
+    {"aw8697_Tone_round_RTP_80_237Hz.bin"},
+    {"aw8697_Digi_rise_RTP_81_237Hz.bin"},
+    {"aw8697_Wood_phone_RTP_82_237Hz.bin"},
+    {"aw8697_Hey_RTP_83_237Hz.bin"},
+    {"aw8697_Zanza_RTP_84_237Hz.bin"},
+    {"aw8697_Info_RTP_85_237Hz.bin"},
+    {"aw8697_Tip_top_RTP_86_237Hz.bin"},
+    {"aw8697_Opop_short_RTP_87_237Hz.bin"},
+    {"aw8697_bowl_bells_RTP_88_237Hz.bin"},
+    {"aw8697_jumpy_RTP_89_237Hz.bin"},
 
     {"aw8697_reserved_90.bin"},
     {"aw8697_reserved_91.bin"},
@@ -2004,6 +1992,26 @@ static char aw8697_rtp_name_19065_237Hz[][AW8697_RTP_NAME_MAX] = {
 #endif
     {"aw8697_rtp_lighthouse.bin"},
     {"aw8697_rtp_silk_19081.bin"},
+    {"aw8697_reserved_152.bin"},
+    {"aw8697_reserved_153.bin"},
+    {"aw8697_reserved_154.bin"},
+    {"aw8697_reserved_155.bin"},
+    {"aw8697_reserved_156.bin"},
+    {"aw8697_reserved_157.bin"},
+    {"aw8697_reserved_158.bin"},
+    {"aw8697_reserved_159.bin"},
+    {"aw8697_reserved_160.bin"},
+
+    {"aw8697_oplus_its_oplus_RTP_161_237Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_237Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_237Hz.bin"},
+    {"aw8697_reserved_164.bin"},
+    {"aw8697_reserved_165.bin"},
+    {"aw8697_reserved_166.bin"},
+    {"aw8697_reserved_167.bin"},
+    {"aw8697_reserved_168.bin"},
+    {"aw8697_reserved_169.bin"},
+    {"aw8697_reserved_170.bin"},
 };
 
 struct aw8697_container *aw8697_rtp = NULL;
@@ -2247,8 +2255,14 @@ static int aw8697_rtp_update(struct aw8697 *aw8697)
     aw8697_i2c_write(aw8697, AW8697_REG_RAMADDRH, aw8697_cont->data[0+shift]);
     aw8697_i2c_write(aw8697, AW8697_REG_RAMADDRL, aw8697_cont->data[1+shift]);
     shift = aw8697->ram.ram_shift;
-    for(i=shift; i<aw8697_cont->len; i++) {
-        aw8697_i2c_write(aw8697, AW8697_REG_RAMDATA, aw8697_cont->data[i]);
+    i = aw8697->ram.ram_shift;
+    while(i < aw8697_cont->len) {
+        if (aw8697_cont->len-i < 2048) {
+            aw8697_i2c_writes(aw8697, AW8697_REG_RAMDATA, &aw8697_cont->data[i], aw8697_cont->len-i);
+            break;
+        }
+        aw8697_i2c_writes(aw8697, AW8697_REG_RAMDATA, &aw8697_cont->data[i], 2048);
+        i += 2048;
     }
 
 #if 0
@@ -2345,7 +2359,7 @@ static int aw8697_ram_update(struct aw8697 *aw8697)
     aw8697->rtp_init = 0;
 
     //f0 165 166,166
-    // 167 168, 168
+    //167 168, 168
     //169 170 ,170
     //171 172, 172
     //173 174,174
@@ -2356,7 +2370,7 @@ static int aw8697_ram_update(struct aw8697 *aw8697)
         }
     } else if(aw8697->device_id == 832) {
         if (aw8697->f0 < F0_VAL_MIN_0832 || aw8697->f0 > F0_VAL_MAX_0832) {
-            aw8697->f0 = 2350;
+            aw8697->f0 = F0_VAL_MAX_0832;
         }
     } else {
         if (aw8697->f0 < F0_VAL_MIN_0833 || aw8697->f0 > F0_VAL_MAX_0833) {
@@ -2365,43 +2379,34 @@ static int aw8697_ram_update(struct aw8697 *aw8697)
     }
     aw8697->haptic_real_f0 = (aw8697->f0 / 10);// get f0 from nvram
     pr_err("%s: aw8697->haptic_real_f0 [%d]\n", __func__, aw8697->haptic_real_f0);
-/*
-    if (aw8697->haptic_real_f0 <167)
-    {
-        index = 0;
-    }
-    else if(aw8697->haptic_real_f0 <169)
-    {
-        index = 1;
-    }
-    else if(aw8697->haptic_real_f0 <171)
-    {
-        index = 2;
-    }
-    else if(aw8697->haptic_real_f0 <173)
-    {
-        index = 3;
-    }
-    else
-    {
-        index = 4;
-    }
-*/
+
     if (aw8697->device_id == 832) {
-        pr_info("%s:19065 haptic bin name  %s \n", __func__,aw8697_ram_name_19065[index]);
+        pr_info("%s: haptic bin name  %s \n", __func__,aw8697_ram_name_19065[index]);
         return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
                     aw8697_ram_name_19065[index], aw8697->dev, GFP_KERNEL,
                     aw8697, aw8697_ram_loaded);
     } else if (aw8697->device_id == 833) {
-        pr_info("%s:19065 haptic bin name  %s \n", __func__,aw8697_ram_name_19161[index]);
+        pr_info("%s: haptic bin name  %s \n", __func__,aw8697_ram_name_19161[index]);
         return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
                     aw8697_ram_name_19161[index], aw8697->dev, GFP_KERNEL,
                     aw8697, aw8697_ram_loaded);
     } else {
-        pr_info("%s:haptic bin name  %s \n", __func__,aw8697_ram_name[index]);
-        return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-                    aw8697_ram_name[index], aw8697->dev, GFP_KERNEL,
-                    aw8697, aw8697_ram_loaded);
+    if (aw8697->vibration_style == AW8697_HAPTIC_VIBRATION_CRISP_STYLE) {
+            pr_err("%s: haptic bin name  %s \n", __func__,aw8697_ram_name[index]);
+            return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
+                        aw8697_ram_name[index], aw8697->dev, GFP_KERNEL,
+                        aw8697, aw8697_ram_loaded);
+        } else if (aw8697->vibration_style == AW8697_HAPTIC_VIBRATION_SOFT_STYLE) {
+            pr_err("%s:soft haptic bin name  %s \n", __func__,aw8697_ram_name_170_soft[index]);
+            return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
+                        aw8697_ram_name_170_soft[index], aw8697->dev, GFP_KERNEL,
+                        aw8697, aw8697_ram_loaded);
+        } else {
+            pr_err("%s: haptic bin name  %s \n", __func__,aw8697_ram_name[index]);
+            return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
+                        aw8697_ram_name[index], aw8697->dev, GFP_KERNEL,
+                        aw8697, aw8697_ram_loaded);
+    }
     }
 }
 
@@ -3683,6 +3688,7 @@ const struct firmware *aw8697_rtp_load_file_accord_f0(struct aw8697 *aw8697)
 
     if ((aw8697->rtp_file_num >=  RINGTONES_START_INDEX && aw8697->rtp_file_num <= RINGTONES_END_INDEX)
         || (aw8697->rtp_file_num >=  NEW_RING_START && aw8697->rtp_file_num <= NEW_RING_END)
+        || (aw8697->rtp_file_num >=  OS12_NEW_RING_START && aw8697->rtp_file_num <= OS12_NEW_RING_END)
         || aw8697->rtp_file_num == RINGTONES_SIMPLE_INDEX
         || aw8697->rtp_file_num == RINGTONES_PURE_INDEX)
     {
@@ -3743,9 +3749,9 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
 {
     const struct firmware *rtp_file = NULL;
     int ret = -1;
-    struct aw8697 *aw8697 = container_of(work, struct aw8697, rtp_work);
+    struct aw8697 *aw8697 = container_of(work, struct aw8697, rtp_work.work);
 
-    pr_info("%s enter\n", __func__);
+    pr_info("%s enter: device_id = %d, f0 = %d\n", __func__, aw8697->device_id, aw8697->f0);
     aw8697->rtp_routine_on = 1;
     /* fw loaded */
 
@@ -3777,9 +3783,13 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
                 ret = request_firmware(&rtp_file,
                 aw8697_rtp_name_19065_230Hz[aw8697->rtp_file_num],
                 aw8697->dev);
-            } else {
+            } else if (aw8697->f0 <= 2360) {
                 ret = request_firmware(&rtp_file,
                 aw8697_rtp_name_19065_234Hz[aw8697->rtp_file_num],
+                aw8697->dev);
+            } else {
+                ret = request_firmware(&rtp_file,
+                aw8697_rtp_name_19065_237Hz[aw8697->rtp_file_num],
                 aw8697->dev);
             }
         } else {
@@ -5098,6 +5108,84 @@ static ssize_t aw8697_file_write(struct file* filp, const char* buff, size_t len
     return len;
 }
 
+static ssize_t proc_vibration_style_read(struct file *filp, char __user *buf,
+                     size_t count, loff_t *ppos)
+{
+    struct aw8697 *aw8697 = (struct aw8697 *)filp->private_data;
+    uint8_t ret = 0;
+    int style = 0;
+    char page[10];
+
+    style = aw8697->vibration_style;
+
+    dev_info(aw8697->dev, "%s:aw8697 touch_style=%d\n", __func__,style);
+    sprintf(page, "%d\n", style);
+    ret = simple_read_from_buffer(buf, count, ppos, page, strlen(page));
+    return ret;
+}
+
+static ssize_t proc_vibration_style_write(struct file *filp, const char __user *buf,
+                      size_t count, loff_t *lo)
+{
+    struct aw8697 *aw8697 = (struct aw8697 *)filp->private_data;
+    char buffer[5] = { 0 };
+    int val;
+
+    if (count > 5) {
+        return -EFAULT;
+    }
+
+    if (copy_from_user(buffer, buf, count)) {
+        dev_err(aw8697->dev,"%s: error.\n", __func__);
+        return -EFAULT;
+    }
+
+    dev_err(aw8697->dev,"buffer=%s", buffer);
+    kstrtoint(buffer, 0, &val);
+    dev_err(aw8697->dev,"val = %d", val);
+
+    if (val == 0) {
+        aw8697->vibration_style = AW8697_HAPTIC_VIBRATION_CRISP_STYLE;
+        aw8697_ram_update(aw8697);
+    } else if (val == 1){
+        aw8697->vibration_style = AW8697_HAPTIC_VIBRATION_SOFT_STYLE;
+        aw8697_ram_update(aw8697);
+    } else {
+        aw8697->vibration_style = AW8697_HAPTIC_VIBRATION_CRISP_STYLE;
+    }
+    return count;
+}
+
+static const struct file_operations proc_vibration_style_ops = {
+    .read = proc_vibration_style_read,
+    .write = proc_vibration_style_write,
+    .open =  aw8697_file_open,
+    .owner = THIS_MODULE,
+};
+
+static int init_vibrator_proc(struct aw8697 *aw8697)
+{
+    int ret = 0;
+    struct proc_dir_entry *prEntry_da = NULL;
+    struct proc_dir_entry *prEntry_tmp = NULL;
+
+    prEntry_da = proc_mkdir("vibrator", NULL);
+    if (prEntry_da == NULL) {
+        ret = -ENOMEM;
+        dev_err(aw8697->dev, "%s: Couldn't create vibrator proc entry\n",
+              __func__);
+    }
+
+    prEntry_tmp = proc_create_data("touch_style", 0664, prEntry_da,
+                       &proc_vibration_style_ops, aw8697);
+    if (prEntry_tmp == NULL) {
+        ret = -ENOMEM;
+        dev_err(aw8697->dev, "%s: Couldn't create proc entry, %d\n", __func__,
+              __LINE__);
+    }
+    return 0;
+}
+
 #ifdef AAC_RICHTAP
 static int aw8697_file_mmap(struct file *filp, struct vm_area_struct *vma)
 {
@@ -5181,6 +5269,7 @@ static int aw8697_haptic_init(struct aw8697 *aw8697)
     mutex_lock(&aw8697->lock);
 
     aw8697->activate_mode = AW8697_HAPTIC_ACTIVATE_CONT_MODE;
+    aw8697->vibration_style = AW8697_HAPTIC_VIBRATION_CRISP_STYLE;
 
     ret = aw8697_i2c_read(aw8697, AW8697_REG_WAVSEQ1, &reg_val);
     aw8697->index = reg_val & 0x7F;
@@ -5218,8 +5307,9 @@ static int aw8697_haptic_init(struct aw8697 *aw8697)
 
     aw8697_haptic_trig_param_init(aw8697);
     aw8697_haptic_trig_param_config(aw8697);
+    init_vibrator_proc(aw8697);
 
-   aw8697_haptic_os_calibration(aw8697);
+    aw8697_haptic_os_calibration(aw8697);
 
     aw8697_haptic_cont_vbat_mode(aw8697,
             AW8697_HAPTIC_CONT_VBAT_HW_COMP_MODE);
@@ -5614,47 +5704,47 @@ static ssize_t aw8697_vmax_show(struct device *dev,
 }
 
 struct aw8697_vmax_map {
-	int level;
-	int vmax;
-	int gain;
+    int level;
+    int vmax;
+    int gain;
 };
 static struct aw8697_vmax_map vmax_map[] = {
-	{800,  0x00, 0x40},
-	{900,  0x00, 0x49},
-	{1000, 0x00, 0x51},
-	{1100, 0x00, 0x5A},
-	{1200, 0x00, 0x62},
-	{1300, 0x00, 0x6B},
-	{1400, 0x00, 0x73},
-	{1500, 0x00, 0x7C},
-	{1600, 0x01, 0x80},
-	{1700, 0x04, 0x80},
-	{1800, 0x07, 0x80},
-	{1900, 0x0A, 0x80},
-	{2000, 0x0D, 0x80},
-	{2100, 0x10, 0x80},
-	{2200, 0x12, 0x80},
-	{2300, 0x15, 0x80},
-	{2400, 0x18, 0x80},
+    {800,  0x00, 0x40},
+    {900,  0x00, 0x49},
+    {1000, 0x00, 0x51},
+    {1100, 0x00, 0x5A},
+    {1200, 0x00, 0x62},
+    {1300, 0x00, 0x6B},
+    {1400, 0x00, 0x73},
+    {1500, 0x00, 0x7C},
+    {1600, 0x01, 0x80},
+    {1700, 0x04, 0x80},
+    {1800, 0x07, 0x80},
+    {1900, 0x0A, 0x80},
+    {2000, 0x0D, 0x80},
+    {2100, 0x10, 0x80},
+    {2200, 0x12, 0x80},
+    {2300, 0x15, 0x80},
+    {2400, 0x18, 0x80},
 };
 
 int aw8697_convert_level_to_vmax(struct aw8697 *aw8697, int val)
 {
-	int i;
+    int i;
 
-	for(i = 0; i < ARRAY_SIZE(vmax_map); i++) {
-		if(val == vmax_map[i].level) {
-			aw8697->vmax = vmax_map[i].vmax;
-			aw8697->gain = vmax_map[i].gain;
-			break;
-		}
-	}
-	if(i == ARRAY_SIZE(vmax_map)) {
-		aw8697->vmax = vmax_map[i - 1].vmax;
-		aw8697->gain = vmax_map[i - 1].gain;
-	}
+    for(i = 0; i < ARRAY_SIZE(vmax_map); i++) {
+        if(val == vmax_map[i].level) {
+            aw8697->vmax = vmax_map[i].vmax;
+            aw8697->gain = vmax_map[i].gain;
+            break;
+        }
+    }
+    if(i == ARRAY_SIZE(vmax_map)) {
+        aw8697->vmax = vmax_map[i - 1].vmax;
+        aw8697->gain = vmax_map[i - 1].gain;
+    }
 
-	return i;
+    return i;
 }
 
 static ssize_t aw8697_vmax_store(struct device *dev,
@@ -5979,6 +6069,7 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
     int rc = 0;
     int rtp_is_going_on = 0;
     static bool mute = false;
+    unsigned long audio_delay = 0;
 
     rc = kstrtouint(buf, 0, &val);
     if (rc < 0)
@@ -6005,6 +6096,7 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
     /*OP add for juge rtp on end*/
     if (((val >=  RINGTONES_START_INDEX && val <= RINGTONES_END_INDEX)
         || (val >=  NEW_RING_START && val <= NEW_RING_END)
+        || (val >=  OS12_NEW_RING_START && val <= OS12_NEW_RING_END)
         || (val >=  OPLUS_RING_START && val <= OPLUS_RING_END)
         || (val >=  OPLUS_NEW_RING_1_START && val <= OPLUS_NEW_RING_1_END)
         || (val >=  OPLUS_NEW_RING_2_START && val <= OPLUS_NEW_RING_2_END)
@@ -6028,9 +6120,13 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
     if (val == AUDIO_READY_STATUS && aw8697->pre_haptic_number) {
         pr_info("pre_haptic_number:%d\n",aw8697->pre_haptic_number);
        val = aw8697->pre_haptic_number;
+        audio_delay = aw8697->audio_delay;
     }
     if (!val) {
       aw8697_op_clean_status(aw8697);
+      if (delayed_work_pending(&aw8697->rtp_work)) {
+          cancel_delayed_work(&aw8697->rtp_work);
+      }
     }
     aw8697_haptic_stop(aw8697);
 
@@ -6041,7 +6137,7 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
         aw8697->rtp_file_num = val;
         if(val) {
             //schedule_work(&aw8697->rtp_work);
-            queue_work(system_unbound_wq, &aw8697->rtp_work);
+            queue_delayed_work(system_unbound_wq, &aw8697->rtp_work, msecs_to_jiffies(audio_delay));
         }
     } else {
         pr_err("%s: rtp_file_num 0x%02x over max value \n", __func__, aw8697->rtp_file_num);
@@ -6141,7 +6237,7 @@ static ssize_t aw8697_f0_store(struct device *dev, struct device_attribute *attr
     } else if(aw8697->device_id == 832) {
         aw8697->f0 = val;
         if (aw8697->f0 < F0_VAL_MIN_0832 || aw8697->f0 > F0_VAL_MAX_0832) {
-            aw8697->f0 = 2300;
+            aw8697->f0 = F0_VAL_0832;
         }
     } else if(aw8697->device_id == 833) {
         aw8697->f0 = val;
@@ -6941,7 +7037,7 @@ static void motor_old_test_work(struct work_struct *work)
             aw8697->rtp_file_num = AW8697_WAVEFORM_INDEX_OLD_STEADY;
             if(AW8697_WAVEFORM_INDEX_OLD_STEADY) {
                 //schedule_work(&aw8697->rtp_work);
-                queue_work(system_unbound_wq, &aw8697->rtp_work);
+                queue_delayed_work(system_unbound_wq, &aw8697->rtp_work, 0);
             }
         } else {
             pr_err("%s: rtp_file_num 0x%02x over max value \n", __func__, aw8697->rtp_file_num);
@@ -6959,7 +7055,7 @@ static void motor_old_test_work(struct work_struct *work)
             aw8697->rtp_file_num = AW8697_WAVEFORM_INDEX_HIGH_TEMP;
             if(AW8697_WAVEFORM_INDEX_HIGH_TEMP) {
                 //schedule_work(&aw8697->rtp_work);
-                queue_work(system_unbound_wq, &aw8697->rtp_work);
+                queue_delayed_work(system_unbound_wq, &aw8697->rtp_work, 0);
             }
         } else {
             pr_err("%s: rtp_file_num 0x%02x over max value \n", __func__, aw8697->rtp_file_num);
@@ -6977,7 +7073,7 @@ static void motor_old_test_work(struct work_struct *work)
             aw8697->rtp_file_num = AW8697_WAVEFORM_INDEX_LISTEN_POP;
             if(AW8697_WAVEFORM_INDEX_LISTEN_POP) {
                 //schedule_work(&aw8697->rtp_work);
-                queue_work(system_unbound_wq, &aw8697->rtp_work);
+                queue_delayed_work(system_unbound_wq, &aw8697->rtp_work, 0);
             }
         } else {
             pr_err("%s: rtp_file_num 0x%02x over max value \n", __func__, aw8697->rtp_file_num);
@@ -7055,7 +7151,7 @@ static ssize_t aw8697_waveform_index_store(struct device *dev, struct device_att
     }
 
     if(1 == sscanf(buf, "%x", &databuf[0])) {
-        pr_err("%s: waveform_index = %d\n", __FUNCTION__, databuf[0]);
+        pr_err("%s: waveform_index = %d, f0 = %d\n", __FUNCTION__, databuf[0], aw8697->f0);
         mutex_lock(&aw8697->lock);
         aw8697->seq[0] = (unsigned char)databuf[0];
         aw8697_haptic_set_wav_seq(aw8697, 0, aw8697->seq[0]);
@@ -7275,6 +7371,43 @@ static ssize_t aw8697_device_id_store(struct device *dev,
 }
 #endif
 
+static ssize_t aw8697_audio_delay_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+#ifdef TIMED_OUTPUT
+    struct timed_output_dev *to_dev = dev_get_drvdata(dev);
+    struct aw8697 *aw8697 = container_of(to_dev, struct aw8697, to_dev);
+#else
+    struct led_classdev *cdev = dev_get_drvdata(dev);
+    struct aw8697 *aw8697 = container_of(cdev, struct aw8697, cdev);
+#endif
+
+    pr_err("%s:audio_delay = %d\n", __func__, aw8697->audio_delay);
+    return snprintf(buf, PAGE_SIZE, "%d\n", aw8697->audio_delay);
+}
+
+static ssize_t aw8697_audio_delay_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t count)
+{
+#ifdef TIMED_OUTPUT
+    struct timed_output_dev *to_dev = dev_get_drvdata(dev);
+    struct aw8697 *aw8697 = container_of(to_dev, struct aw8697, to_dev);
+#else
+    struct led_classdev *cdev = dev_get_drvdata(dev);
+    struct aw8697 *aw8697 = container_of(cdev, struct aw8697, cdev);
+#endif
+    int rc = 0;
+    unsigned int val = 0;
+
+    rc = kstrtouint(buf, 0, &val);
+    if (rc < 0)
+        return rc;
+    pr_err("%s:audio-delay, now is %d, to set %d\n", __FUNCTION__, aw8697->audio_delay, val);
+    aw8697->audio_delay = val;
+
+    return count;
+}
+
 static DEVICE_ATTR(state, S_IWUSR | S_IRUGO, aw8697_state_show, aw8697_state_store);
 
 //static DEVICE_ATTR(duration, S_IWUSR | S_IRUGO, aw8697_duration_show, aw8697_duration_store);
@@ -7325,6 +7458,7 @@ static DEVICE_ATTR(device_id, S_IWUSR | S_IRUGO, aw8697_device_id_show, aw8697_d
 static DEVICE_ATTR(gun_type, S_IWUSR | S_IRUGO, aw8697_gun_type_show, aw8697_gun_type_store);   //hch 20190917
 static DEVICE_ATTR(bullet_nr, S_IWUSR | S_IRUGO, aw8697_bullet_nr_show, aw8697_bullet_nr_store);    //hch 20190917
 static DEVICE_ATTR(gun_mode, S_IWUSR | S_IRUGO, aw8697_gun_mode_show, aw8697_gun_mode_store);   //hch 20190917
+static DEVICE_ATTR(audio_delay, S_IWUSR | S_IRUGO, aw8697_audio_delay_show, aw8697_audio_delay_store);
 
 static struct attribute *aw8697_vibrator_attributes[] = {
     &dev_attr_state.attr,
@@ -7370,6 +7504,7 @@ static struct attribute *aw8697_vibrator_attributes[] = {
     &dev_attr_gun_type.attr,    //hch 20190917
     &dev_attr_bullet_nr.attr,   //hch 20190917
     &dev_attr_gun_mode.attr,    //hch 20190917
+    &dev_attr_audio_delay.attr,
     NULL
 };
 
@@ -7468,7 +7603,7 @@ static int aw8697_vibrator_init(struct aw8697 *aw8697)
     aw8697->timer.function = aw8697_vibrator_timer_func;
     INIT_WORK(&aw8697->vibrator_work, aw8697_vibrator_work_routine);
 
-    INIT_WORK(&aw8697->rtp_work, aw8697_rtp_work_routine);
+    INIT_DELAYED_WORK(&aw8697->rtp_work, aw8697_rtp_work_routine);
 
     INIT_WORK(&aw8697->rtp_single_cycle_work, aw8697_rtp_single_cycle_routine);
     INIT_WORK(&aw8697->rtp_regroup_work, aw8697_rtp_regroup_routine);
@@ -7643,6 +7778,9 @@ static int aw8697_parse_dt(struct device *dev, struct aw8697 *aw8697,
         aw8697->device_id = 815;
     dev_info(dev, "%s: aw8697->device_id=%d\n", __func__, aw8697->device_id);
 #endif
+    if (of_property_read_u32(np, "audio_delay", &aw8697->audio_delay))
+        aw8697->audio_delay = 0;
+    dev_info(dev, "%s: aw8697->audio_delay = %d\n", __func__, aw8697->audio_delay);
     return 0;
 }
 

@@ -42,4 +42,3 @@ void boost_pool_dump(struct ion_boost_pool *pool);
 
 bool kcrit_scene_init(void);
 #endif /* _ION_SMART_POOL_H */
-

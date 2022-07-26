@@ -21,9 +21,7 @@ obj-$(CONFIG_TOUCHSCREEN_FT5X26)	+=  FT5X26/
 obj-$(CONFIG_TOUCHSCREEN_MTK_GT5688)	+=  GT5688/
 obj-$(CONFIG_TOUCHSCREEN_HIMAX_I2C)	+=  hxchipset/
 obj-$(CONFIG_TOUCHSCREEN_MTK_FOCALTECH_FHD)	+=  focaltech_fhd_touch/
-
-obj-y      += tp_usb_notifier.o
-obj-y      += update_tpfw_notifier.o
-obj-$(CONFIG_INPUT_TOUCHSCREEN)      += headset_notifier.o
-obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI)	 += NT36525B/
-obj-$(CONFIG_TOUCHSCREEN_ILI9881H)	 += ili9881h/
+obj-$(CONFIG_TOUCHSCREEN_MTK_GT9157)    +=  GT9157/
+obj-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET_8789P1_8185P3)    +=  hxchipset_8789p1_8185p3/
+obj-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET) += hxchipset_hx83102p/
+obj-$(CONFIG_TOUCHSCREEN_GOODIX_BRL) += goodix_berlin_driver/

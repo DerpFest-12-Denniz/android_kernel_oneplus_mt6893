@@ -1388,7 +1388,7 @@ retry_journal:
 		return ret;
 	}
 	*pagep = page;
-	mtk_btag_pidlog_set_pid(*pagep);
+	mtk_btag_pidlog_set_pid(page, PIDLOG_MODE_FS_WRITE_BEGIN, true);
 	return ret;
 }
 
@@ -4495,9 +4495,6 @@ int ext4_truncate(struct inode *inode)
 
 	if (inode->i_size & (inode->i_sb->s_blocksize - 1))
 		ext4_block_truncate_page(handle, mapping, inode->i_size);
-#if defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
-	ext4_update_time(EXT4_SB(inode->i_sb));
-#endif
 
 	/*
 	 * We add the inode to the orphan list, so that if this

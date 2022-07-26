@@ -59,6 +59,7 @@ static bool aod_state = false;
 static int aod_finger_unlock_flag = 0;
 static int esd_brightness;
 extern unsigned long oplus_max_normal_brightness;
+extern unsigned long aod_light_mode;
 
 #define LCM_DSI_CMD_MODE 1
 
@@ -687,7 +688,7 @@ static const struct drm_display_mode performance_mode = {
 
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -762,7 +763,7 @@ static struct mtk_panel_params ext_params = {
 };
 
 static struct mtk_panel_params ext_params_90hz = {
-	.cust_esd_check = 1,
+	.cust_esd_check = 0,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
         .cmd = 0x0A, .count = 1, .para_list[0] = 0x9C, .mask_list[0] = 0x9C,
@@ -1209,6 +1210,7 @@ static int panel_doze_enable(struct drm_panel *panel, void *dsi, dcs_write_gce c
 				cb(dsi, handle, lcm_normal_to_aod_sam[i].para_list, lcm_normal_to_aod_sam[i].count);
 		}
 	}
+	aod_light_mode = 0;
 
 	return 0;
 }
@@ -1377,6 +1379,11 @@ static int lcm_panel_poweron(struct drm_panel *panel)
 		return 0;
 
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(2);
@@ -1829,6 +1836,11 @@ static int lcm_probe(struct mipi_dsi_device *dsi)
 			return -EPROBE_DEFER;
 	}
 	ctx->bias_gpio = devm_gpiod_get(ctx->dev, "bias", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bias_gpio)) {
+		dev_err(ctx->dev, "%s: cannot get bias_gpio %ld\n",
+			__func__, PTR_ERR(ctx->bias_gpio));
+		return PTR_ERR(ctx->bias_gpio);
+	}
 	gpiod_set_value(ctx->bias_gpio, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_gpio);
 	msleep(2);

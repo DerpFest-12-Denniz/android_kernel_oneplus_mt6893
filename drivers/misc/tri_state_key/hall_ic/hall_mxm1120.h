@@ -46,7 +46,6 @@
 /* register map */
 /* ********************************************************* */
 #define M1120_REG_PERSINT                   (0x00)
-#define M1120_VAL_PERSINT_COUNT(n)          (n<<4)
 #define M1120_VAL_PERSINT_INTCLR            (0x01)
 /*
  *[7:4]   PERS        : interrupt persistence count
@@ -229,9 +228,9 @@
 /* ********************************************************* */
 /* delay property */
 /* ********************************************************* */
-#define M1120_DELAY_MAX                     (200)   // ms
-#define M1120_DELAY_MIN                     (20)    // ms
-#define M1120_DELAY_FOR_READY               (10)    // ms
+#define M1120_DELAY_MAX                     (200)   /* ms */
+#define M1120_DELAY_MIN                     (20)    /* ms */
+#define M1120_DELAY_FOR_READY               (10)    /* ms */
 /* ********************************************************* */
 
 
@@ -304,7 +303,7 @@ struct m1120_data_t {
 	int                 power_vi2c;
 	int                 power_vdd;
 	int                 igpio;
-	int                 int_en;
+	int                 irq_en;
 	int                 irq;
 	int                 irq_gpio;
 	int                 use_hrtimer;

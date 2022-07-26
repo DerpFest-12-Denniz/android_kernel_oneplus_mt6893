@@ -15,15 +15,20 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 
-#if 1//def ODM_HQ_EDIT
-#if 1//def CONFIG_SET_LCD_BIAS_ODM_HQ
+#ifdef OPLUS_BUG_STABILITY
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
 typedef enum {
 	FIRST_VSP_AFTER_VSN = 0,
 	FIRST_VSN_AFTER_VSP = 1
 } LCD_BIAS_POWER_ON_SEQUENCE;
 #endif //CONFIG_SET_LCD_BIAS_ODM_HQ
-#endif //ODM_HQ_EDIT
-#if 1//defined(CONFIG_RT5081_PMU_DSV) || defined(CONFIG_MT6370_PMU_DSV)
+#endif /* OPLUS_BUG_STABILITY */
+
+/*#ifdef OPLUS_BUG_STABILITY*/
+#if defined(CONFIG_RT5081_PMU_DSV) || defined(CONFIG_MT6370_PMU_DSV) || defined(CONFIG_SET_LCD_BIAS_ODM_HQ)
+/*#else*/
+/*#if defined(CONFIG_RT5081_PMU_DSV) || defined(CONFIG_MT6370_PMU_DSV)*/
+/*#endif*/
 static struct regulator *disp_bias_pos;
 static struct regulator *disp_bias_neg;
 static int regulator_inited;
@@ -175,8 +180,8 @@ int display_bias_disable(void)
 EXPORT_SYMBOL(display_bias_disable);
 #endif
 
-#if 1//def ODM_HQ_EDIT
-#if 1//def CONFIG_SET_LCD_BIAS_ODM_HQ
+#ifdef OPLUS_BUG_STABILITY
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
 void pmi_lcd_bias_set_vspn_vol(unsigned int value)
 {
 	int ret = 0;
@@ -244,8 +249,6 @@ int pmi_lcd_bias_vsn_is_enabled(void)
 	return regulator_is_enabled(disp_bias_neg);
 }
 EXPORT_SYMBOL(pmi_lcd_bias_vsn_is_enabled);
-
-
 #endif //CONFIG_SET_LCD_BIAS_ODM_HQ
-#endif // ODM_HQ_EDIT
+#endif /* OPLUS_BUG_STABILITY */
 

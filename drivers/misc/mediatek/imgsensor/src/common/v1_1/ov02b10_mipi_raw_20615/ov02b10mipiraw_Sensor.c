@@ -26,6 +26,12 @@
 
 #define LOG_INF(format, args...)    pr_debug(PFX "[%s] " format, __func__, ##args)
 
+#define OV02B10_MIRROR_FLIP_ENABLE    1
+#if  OV02B10_MIRROR_FLIP_ENABLE
+#define  OV02B10_START_PIXEL   SENSOR_OUTPUT_FORMAT_RAW_R
+#else
+#define  OV02B10_START_PIXEL   SENSOR_OUTPUT_FORMAT_RAW_B
+#endif
 static DEFINE_SPINLOCK(imgsensor_drv_lock);
 
 static  imgsensor_info_struct imgsensor_info = {
@@ -145,7 +151,7 @@ static  imgsensor_info_struct imgsensor_info = {
     .hs_video_delay_frame = 3, /*enter high speed video  delay frame num*/
     .slim_video_delay_frame = 3,/*enter slim video delay frame num*/
     .custom1_delay_frame = 3,
-    .isp_driving_current = ISP_DRIVING_8MA, /*mclk driving current*/
+    .isp_driving_current = ISP_DRIVING_4MA, /*mclk driving current*/
 
     /*Sensor_interface_type*/
     .sensor_interface_type = SENSOR_INTERFACE_TYPE_MIPI,
@@ -157,7 +163,7 @@ static  imgsensor_info_struct imgsensor_info = {
     .mipi_settle_delay_mode = 0, //0,MIPI_SETTLEDELAY_AUTO; 1,MIPI_SETTLEDELAY_MANNUAL
 
     /*sensor output first pixel color*/
-    .sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_B,
+    .sensor_output_dataformat = OV02B10_START_PIXEL,
 
     .mclk = 24,/*mclk value, suggest 24 or 26 for 24Mhz or 26Mhz*/
     .mipi_lane_num = SENSOR_MIPI_1_LANE,/*mipi lane num*/
@@ -467,43 +473,16 @@ static void ihdr_write_shutter_gain(
     }
 }
 
-static void set_mirror_flip(kal_uint8 image_mirror)
+static void set_mirror_flip(void)
 {
-    LOG_INF("image_mirror = %d\n", image_mirror);
-
-    switch(image_mirror) {
-    case IMAGE_NORMAL:
-        //.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_B,
-        write_cmos_sensor(0xfd, 0x01);
-        write_cmos_sensor(0x3f, 0x00);
-        write_cmos_sensor(0x01, 0x01);
-        break;
-
-    case IMAGE_H_MIRROR:
-        //.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_GB,
-        write_cmos_sensor(0xfd, 0x01);
-        write_cmos_sensor(0x3f, 0x01);
-        write_cmos_sensor(0x01, 0x01);
-        break;
-
-    case IMAGE_V_MIRROR:
-        //.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_GR,
-        write_cmos_sensor(0xfd, 0x01);
-        write_cmos_sensor(0x3f, 0x02);
-        write_cmos_sensor(0x01, 0x01);
-        break;
-
-    case IMAGE_HV_MIRROR:
-        //.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_R,
-        write_cmos_sensor(0xfd, 0x01);
-        write_cmos_sensor(0x3f, 0x03);
-        write_cmos_sensor(0x01, 0x01);
-        break;
-
-    default:
-        LOG_INF("Error image_mirror setting\n");
-    }
+#if OV02B10_MIRROR_FLIP_ENABLE
+	LOG_INF("set mirror and flip\n");
+	write_cmos_sensor(0x12, 0x03);
+#else
+	write_cmos_sensor(0x12, 0x00);
+#endif
 }
+
 #define I2C_BUFFER_LEN 225    /* trans# max is 255, each 3 bytes */
 extern int iBurstWriteReg_multi(u8 *pData, u32 bytes, u16 i2cId, u16 transfer_length, u16 timing);
 
@@ -755,9 +734,8 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
         do {
             write_cmos_sensor(0xfd, 0x00);
             *sensor_id = ((read_cmos_sensor(0x0200) << 8) | read_cmos_sensor(0x0300));
-            LOG_INF("weisaholun ov02b [get_imgsensor_id] sensor_id = 0x%x",*sensor_id);
             if (*sensor_id == OV02B10_SENSOR_ID) {
-                    *sensor_id = imgsensor_info.sensor_id;
+                *sensor_id = imgsensor_info.sensor_id;
                 read_module_data();
                 LOG_INF("i2c write id: 0x%x, sensor id: 0x%x\n", imgsensor.i2c_write_id, *sensor_id);
                 return ERROR_NONE;
@@ -924,7 +902,7 @@ static kal_uint32 preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
     imgsensor.autoflicker_en = KAL_FALSE;
     spin_unlock(&imgsensor_drv_lock);
     preview_setting();
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     mdelay(10);
     return ERROR_NONE;
 }    /*    preview   */
@@ -979,7 +957,7 @@ static kal_uint32 capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
         /*write_cmos_sensor(0x5002,0x00);*/
         write_cmos_sensor(0x5000, ((read_cmos_sensor(0x5000) & 0xBF) | 0x00));
     }
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     return ERROR_NONE;
 }    /* capture() */
 static kal_uint32 normal_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
@@ -996,7 +974,7 @@ static kal_uint32 normal_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
     imgsensor.autoflicker_en = KAL_FALSE;
     spin_unlock(&imgsensor_drv_lock);
     preview_setting();
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     mdelay(10);
     return ERROR_NONE;
 }    /*    normal_video   */
@@ -1019,7 +997,7 @@ static kal_uint32 hs_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
     imgsensor.autoflicker_en = KAL_FALSE;
     spin_unlock(&imgsensor_drv_lock);
     preview_setting();
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     mdelay(10);
 
     return ERROR_NONE;
@@ -1043,7 +1021,7 @@ static kal_uint32 slim_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
     imgsensor.autoflicker_en = KAL_FALSE;
     spin_unlock(&imgsensor_drv_lock);
     preview_setting();
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     mdelay(10);
 
     return ERROR_NONE;
@@ -1064,7 +1042,7 @@ static kal_uint32 Custom1(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
     imgsensor.autoflicker_en = KAL_FALSE;
     spin_unlock(&imgsensor_drv_lock);
     custom1_setting();
-    set_mirror_flip(imgsensor.mirror);
+    set_mirror_flip();
     mdelay(10);
     return ERROR_NONE;
 }   /*  Custom1   */

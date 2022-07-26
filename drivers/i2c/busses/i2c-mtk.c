@@ -56,9 +56,22 @@ static struct mtk_i2c_pll i2c_pll_info;
 #define DEVICE_TYPE_ZY0602       3
 #define I2C_STATE        "i2c-state"
 #define OUTPUT_LOW_STATE "output-low-state"
+#define I2C_STATE_SCL        "i2c-state-scl"
+#define OUTPUT_LOW_STATE_SCL "output-low-state-scl"
+
 
 void __iomem *pin_din = NULL;
 #endif /*OPLUS_FEATURE_CHG_BASIC*/
+
+static inline void _i2c_writeb(u8 value, struct mt_i2c *i2c, u16 offset)
+{
+	writeb(value, i2c->base + offset);
+}
+
+static inline u8 _i2c_readb(struct mt_i2c *i2c, u16 offset)
+{
+	return readb(i2c->base + offset);
+}
 
 static inline void _i2c_writew(u16 value, struct mt_i2c *i2c, u16 offset)
 {
@@ -87,6 +100,10 @@ static inline u16 _i2c_readw(struct mt_i2c *i2c, u16 offset)
 			value = _i2c_readw(i2c, ch_ofs + ofs); \
 		value; \
 	})
+
+#define i2c_writeb(val, i2c, ofs) _i2c_writeb(val, i2c, i2c->ch_offset + ofs)
+
+#define i2c_readb(i2c, ofs) _i2c_readb(i2c, i2c->ch_offset + ofs)
 
 #define i2c_writew(val, i2c, ofs) raw_i2c_writew(val, i2c, i2c->ch_offset, ofs)
 
@@ -174,7 +191,7 @@ s32 map_dma_regs(void)
 
 void dump_dma_regs(void)
 {
-	int status;
+	unsigned int status;
 	int i;
 
 	if (!dma_base) {
@@ -247,7 +264,10 @@ static void record_i2c_info(struct mt_i2c *i2c, int tmo)
 {
 	int idx = i2c->rec_idx;
 
-	i2c->rec_info[idx].slave_addr = i2c_readw(i2c, OFFSET_SLAVE_ADDR);
+	if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_8BIT)
+		i2c->rec_info[idx].slave_addr = i2c_readw(i2c, OFFSET_SLAVE_ADDR);
+	else if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_64BIT)
+		i2c->rec_info[idx].slave_addr = i2c_readw(i2c, OFFSET_SLAVE_ADDR1);
 	i2c->rec_info[idx].intr_stat = i2c->irq_stat;
 	i2c->rec_info[idx].control = i2c_readw(i2c, OFFSET_CONTROL);
 	i2c->rec_info[idx].fifo_stat = i2c_readw(i2c, OFFSET_FIFO_STAT);
@@ -677,7 +697,8 @@ void i2c_dump_info(struct mt_i2c *i2c)
 	       I2CTAG "DCM_EN=0x%x,DEBUGSTAT=0x%x,EXT_CONF=0x%x\n"
 	       I2CTAG "TRANSFER_LEN_AUX=0x%x,OFFSET_DMA_FSM_DEBUG=0x%x\n"
 	       I2CTAG "OFFSET_MCU_INTR=0x%x\n",
-	       (i2c_readw(i2c, OFFSET_SLAVE_ADDR)),
+	       (_i2c_readw(i2c, ((i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_8BIT) ?
+			OFFSET_SLAVE_ADDR : OFFSET_SLAVE_ADDR1) + i2c->ch_offset)),
 	       (i2c_readw(i2c, OFFSET_INTR_MASK)),
 	       (i2c_readw(i2c, OFFSET_INTR_STAT)),
 	       (i2c_readw(i2c, OFFSET_CONTROL)),
@@ -742,7 +763,7 @@ void i2c_dump_info(struct mt_i2c *i2c)
 	       (i2c_readl_dma(i2c, OFFSET_RX_MEM_ADDR2)));
 	pr_info_ratelimited("%s: -----------------------\n", __func__);
 
-	dump_i2c_info(i2c);
+	//dump_i2c_info(i2c);
 	if (i2c->ccu_offset) {
 		dev_info(i2c->dev, "I2C CCU register:\n"
 		I2CTAG "SLAVE_ADDR=0x%x,INTR_MASK=0x%x,\n"
@@ -752,7 +773,8 @@ void i2c_dump_info(struct mt_i2c *i2c)
 		I2CTAG "IO_CONFIG=0x%x,HS=0x%x,DCM_EN=0x%x,DEBUGSTAT=0x%x,\n"
 		I2CTAG "EXT_CONF=0x%x,TRANSFER_LEN_AUX=0x%x\n"
 		I2CTAG "OFFSET_DMA_FSM_DEBUG=0x%x,OFFSET_MCU_INTR=0x%x\n",
-		(raw_i2c_readw(i2c, i2c->ccu_offset, OFFSET_SLAVE_ADDR)),
+		(_i2c_readw(i2c, ((i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_8BIT) ?
+		 OFFSET_SLAVE_ADDR : OFFSET_SLAVE_ADDR1) + i2c->ccu_offset)),
 		(raw_i2c_readw(i2c, i2c->ccu_offset, OFFSET_INTR_MASK)),
 		(raw_i2c_readw(i2c, i2c->ccu_offset, OFFSET_INTR_STAT)),
 		(raw_i2c_readw(i2c, i2c->ccu_offset, OFFSET_CONTROL)),
@@ -843,6 +865,9 @@ static void i2c_gpio_reset(struct mt_i2c *i2c)
 	struct pinctrl *pctrl = NULL;
 	struct pinctrl_state *i2c_state = NULL;
 	struct pinctrl_state *output_low_state = NULL;
+	struct pinctrl_state *i2c_state_scl = NULL;
+	struct pinctrl_state *output_low_state_scl = NULL;
+	static int  i2c_scl_pinctrl_flag = 1;
 	int boot_mode = get_boot_mode();
 
 	//pr_err("%s: test i2c id=%d\n", __func__, i2c->id);   /*for debug*/
@@ -877,13 +902,39 @@ static void i2c_gpio_reset(struct mt_i2c *i2c)
 		return;
 	}
 
+	i2c_state_scl = pinctrl_lookup_state(pctrl, I2C_STATE_SCL);
+	if (IS_ERR_OR_NULL(i2c_state_scl)) {
+		pr_err("%s: get pinctrl state: %s failed! id=%d\n", __func__, I2C_STATE_SCL, i2c->id);
+		i2c_scl_pinctrl_flag = 0;
+	}
+
+	output_low_state_scl = pinctrl_lookup_state(pctrl, OUTPUT_LOW_STATE_SCL);
+	if (IS_ERR_OR_NULL(output_low_state_scl)) {
+		pr_err("%s: get pinctrl state: %s failed! id=%d\n", __func__, OUTPUT_LOW_STATE_SCL, i2c->id);
+		i2c_scl_pinctrl_flag = 0;
+	}
+
 	ret = pinctrl_select_state(pctrl, output_low_state);
 	if (ret < 0) {
 		pr_err("%s: set pinctrl state: %s failed! id=%d\n", __func__, OUTPUT_LOW_STATE, i2c->id);
 		return;
 	}
 
+	if (i2c_scl_pinctrl_flag) {
+		ret = pinctrl_select_state(pctrl, output_low_state_scl);
+		if (ret < 0) {
+			pr_err("%s: set pinctrl state: %s failed! id=%d\n", __func__, OUTPUT_LOW_STATE_SCL, i2c->id);
+		}
+	}
+
 	mdelay(2500);
+
+	if (i2c_scl_pinctrl_flag) {
+		ret = pinctrl_select_state(pctrl, i2c_state_scl);
+		if (ret < 0) {
+			pr_err("%s: set pinctrl state: %s failed! id=%d\n", __func__, I2C_STATE_SCL, i2c->id);
+		}
+	}
 
 	ret = pinctrl_select_state(pctrl, i2c_state);
 	if (ret < 0) {
@@ -1069,7 +1120,10 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 	addr_reg = i2c->addr << 1;
 	if (i2c->op == I2C_MASTER_RD)
 		addr_reg |= 0x1;
-	i2c_writew(addr_reg, i2c, OFFSET_SLAVE_ADDR);
+	if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_8BIT)
+		i2c_writew(addr_reg, i2c, OFFSET_SLAVE_ADDR);
+	else if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_64BIT)
+		i2c_writew(addr_reg, i2c, OFFSET_SLAVE_ADDR1);
 	int_reg = I2C_HS_NACKERR | I2C_ACKERR |
 		  I2C_TRANSAC_COMP | I2C_ARB_LOST;
 	if (i2c->dev_comp->ver == 0x2)
@@ -1111,9 +1165,24 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 
 	/* Prepare buffer data to start transfer */
 	if (isDMA == true && (!i2c->is_ccu_trig)) {
+		if (i2c->dev_comp->i2c_dma_handshake_rst == I2C_DMA_HANDSHAKE_RST) {
+			dev_dbg(i2c->dev, "side-band reset before dma config\n");
+			i2c_writew(I2C_SIDE_BAND_RST, i2c, OFFSET_SOFTRESET);
+			i2c_writel_dma(DMA_SIDE_BAND_RST, i2c, OFFSET_RST);
+			i2c_writew(0, i2c, OFFSET_SOFTRESET);
+			i2c_writel_dma(0, i2c, OFFSET_RST);
+			i2c_writew(I2C_FIFO_ADDR_CLR, i2c, OFFSET_FIFO_ADDR_CLR);
+			udelay(1);
+		}
+
 		if (i2c_readl_dma(i2c, OFFSET_EN)) {
 			i2c_writel_dma(I2C_DMA_WARM_RST, i2c, OFFSET_RST);
 			udelay(5);
+		}
+
+		if (i2c->ch_offset != 0) {
+			i2c_writel_dma(I2C_DMA_HARD_RST, i2c, OFFSET_RST);
+			i2c_writel_dma(0, i2c, OFFSET_RST);
 		}
 
 		if (i2c->op == I2C_MASTER_RD) {
@@ -1184,7 +1253,7 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 			data_size = i2c->total_len;
 			ptr = i2c->dma_buf.vaddr;
 			while (data_size--) {
-				i2c_writew(*ptr, i2c, OFFSET_DATA_PORT);
+				i2c_writeb(*ptr, i2c, OFFSET_DATA_PORT);
 				ptr++;
 			}
 		}
@@ -1255,8 +1324,12 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 
 		/* This slave addr is used to check whether the shadow RG is */
 		/* mapped normally or not */
-		dev_info(i2c->dev, "SLAVE_ADDR=0x%x (shadow RG)",
-			i2c_readw_shadow(i2c, OFFSET_SLAVE_ADDR));
+		if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_8BIT)
+			dev_info(i2c->dev, "SLAVE_ADDR=0x%x (shadow RG)",
+				i2c_readw_shadow(i2c, OFFSET_SLAVE_ADDR));
+		else if (i2c->dev_comp->fifo_support == FIFO_SUPPORT_WIDTH_64BIT)
+			dev_info(i2c->dev, "SLAVE_ADDR=0x%x (shadow RG)",
+				_i2c_readw(i2c, OFFSET_SLAVE_ADDR1));
 		mt_i2c_init_hw(i2c);
 		if ((i2c->ch_offset) && (start_reg & I2C_RESUME_ARBIT)) {
 			i2c_writew_shadow(I2C_RESUME_ARBIT, i2c, OFFSET_START);
@@ -1354,7 +1427,7 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 			data_size = i2c->msg_len;
 		ptr = i2c->dma_buf.vaddr;
 		while (data_size--) {
-			*ptr = i2c_readw(i2c, OFFSET_DATA_PORT);
+			*ptr = i2c_readb(i2c, OFFSET_DATA_PORT);
 			ptr++;
 		}
 	}
@@ -1431,7 +1504,7 @@ static int __mt_i2c_transfer(struct mt_i2c *i2c,
 
 	while (left_num--) {
 		/* In MTK platform the max transfer number is 4096 */
-		if (msgs->len > MAX_DMA_TRANS_SIZE) {
+		if (msgs->len > i2c->apdma_size) {
 			dev_dbg(i2c->dev,
 				" message data length is more than 255\n");
 			ret = -EINVAL;
@@ -1789,10 +1862,13 @@ static int mt_i2c_parse_dt(struct device_node *np, struct mt_i2c *i2c)
 	i2c->buffermode = of_property_read_bool(np, "mediatek,buffermode_used");
 	i2c->hs_only = of_property_read_bool(np, "mediatek,hs_only");
 	i2c->fifo_only = of_property_read_bool(np, "mediatek,fifo_only");
-	pr_info("[I2C]id:%d,freq:%d,div:%d,ch_offset:0x%x,offset_dma:0x%x,offset_ccu:0x%x\n",
+	ret = of_property_read_u32(np, "apdma_size", &i2c->apdma_size);
+	if (ret)
+		i2c->apdma_size = MAX_DMA_TRANS_SIZE;
+	pr_info("[I2C]id:%d,freq:%d,div:%d,ch_offset:0x%x,offset_dma:0x%x,offset_ccu:0x%x,apdma_size:0x%x\n",
 		i2c->id, i2c->speed_hz, i2c->clk_src_div,
 		i2c->ch_offset_default,
-		i2c->ch_offset_dma_default, i2c->ccu_offset);
+		i2c->ch_offset_dma_default, i2c->ccu_offset, i2c->apdma_size);
 	if (i2c->clk_src_div == 0)
 		return -EINVAL;
 	return 0;
@@ -1811,6 +1887,10 @@ int mt_i2c_parse_comp_data(void)
 	}
 	of_property_read_u8(comp_node, "dma_support",
 		(u8 *)&i2c_common_compat.dma_support);
+	of_property_read_u8(comp_node, "fifo_support",
+		(u8 *)&i2c_common_compat.fifo_support);
+	of_property_read_u8(comp_node, "i2c_dma_handshake_rst",
+		(u8 *)&i2c_common_compat.i2c_dma_handshake_rst);
 	of_property_read_u8(comp_node, "idvfs",
 		(u8 *)&i2c_common_compat.idvfs_i2c);
 	of_property_read_u8(comp_node, "set_dt_div",
@@ -2065,6 +2145,7 @@ static int mt_i2c_probe(struct platform_device *pdev)
 		free_i2c_dma_bufs(i2c);
 		return ret;
 	}
+
 	platform_set_drvdata(pdev, i2c);
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	dev_info(&pdev->dev, "<<< mt_i2c_probe end Id: %d \n", i2c->id);
@@ -2095,7 +2176,7 @@ MODULE_DEVICE_TABLE(of, mt_i2c_match);
 
 void mt_i2c_pll_resume(void)
 {
-
+/*
 #if !defined(CONFIG_MT_I2C_FPGA_ENABLE)
 	if (i2c_pll_info.clk_mux && i2c_pll_info.clk_p_univ) {
 		pr_info("i2c main pll switch to univ pll\n");
@@ -2106,10 +2187,12 @@ void mt_i2c_pll_resume(void)
 		pr_info("i2c no need switch top pll\n");
 	}
 #endif
+*/
 }
 
 int mt_i2c_pll_suspend(void)
 {
+/*
 #if !defined(CONFIG_MT_I2C_FPGA_ENABLE)
 	int ret = 0;
 	const char *parent;
@@ -2144,8 +2227,9 @@ err_clk_set_main:
 	clk_disable_unprepare(i2c_pll_info.clk_mux);
 	return ret;
 #else
+*/
 	return 0;
-#endif
+//#endif
 }
 
 

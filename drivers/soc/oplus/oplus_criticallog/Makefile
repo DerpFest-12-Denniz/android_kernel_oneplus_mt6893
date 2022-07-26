@@ -1,6 +1,4 @@
-#obj-$(CONFIG_OPLUS_CRITICALLOG)	+=  oplus_criticallog.o
-#Xiaoshan.Huang
-#obj-$(CONFIG_OPLUS_CRITICALLOG)   +=  oplus_criticallog.o
+#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+obj-y	+=  oplus_criticallog.o criticallog_class.o
+#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
 
-#obj-$(CONFIG_OPLUS_CRITICALLOG)   +=  oplus_criticallog.o
-obj-y  +=  oplus_criticallog.o criticallog_class.o

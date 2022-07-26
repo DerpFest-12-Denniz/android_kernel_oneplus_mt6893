@@ -145,7 +145,9 @@ static bool mtk_is_pdc_ready(struct charger_manager *info)
 
 bool mtk_pdc_check_charger(struct charger_manager *info)
 {
+#ifdef OPLUS_FEATURE_CHG_BASIC
 	printk(KERN_ERR "%s: pd_type[%d]\n", __func__, info->pd_type);
+#endif
 	if (mtk_is_pdc_ready(info) == false)
 		return false;
 

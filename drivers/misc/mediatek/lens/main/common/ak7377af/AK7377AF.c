@@ -23,6 +23,7 @@
 #include <linux/uaccess.h>
 
 #include "lens_info.h"
+#include <linux/regulator/consumer.h>
 
 #define AF_DRVNAME "AK7377AF_DRV"
 #define AF_I2C_SLAVE_ADDR 0x18
@@ -310,17 +311,66 @@ int AK7377AF_GetFileName(unsigned char *pFileName)
 	return 1;
 }
 
-
-extern int fan53870_cam_ldo_set_voltage(int LDO_NUM, int set_mv);
-extern int fan53870_cam_ldo_disable(int LDO_NUM);
-int AK7377AF_DoExtLdo(int enable)
+#if 0
+static struct regulator *ak7377af_ldo1;
+static int AK7377AF_ldo1_regulator_init(struct device *dev)
 {
-	LOG_INF("AK7377AF_DoExtLdo enable: %d", enable);
-	if(enable) {
-		fan53870_cam_ldo_set_voltage(6, 2800);
-	}else {
-		fan53870_cam_ldo_disable(6);
+	static int regulator_inited;
+	int ret = 0;
+
+	if (regulator_inited)
+		return ret;
+    pr_err("get ak7377af_ldo3_regulator_init\n");
+
+	/* please only get regulator once in a driver */
+	ak7377af_ldo1 = regulator_get(dev, "VFP");
+	if (IS_ERR(ak7377af_ldo1)) { /* handle return value */
+		ret = PTR_ERR(ak7377af_ldo1);
+		pr_err("get ak7377af_ldo1 fail, error: %d\n", ret);
+		return ret;
 	}
-	mdelay(10);
-	return 1;
+	regulator_inited = 1;
+	return ret; /* must be 0 */
+
 }
+
+static int AK7377AF_ldo1_enable(struct device *dev)
+{
+	int ret = 0;
+	int retval = 0;
+
+	AK7377AF_ldo1_regulator_init(dev);
+
+	/* set voltage with min & max*/
+	ret = regulator_set_voltage(ak7377af_ldo1, 2800000, 2800000);
+	if (ret < 0)
+		pr_err("set voltage ak7377af_ldo1 fail, ret = %d\n", ret);
+	retval |= ret;
+
+	/* enable regulator */
+	ret = regulator_enable(ak7377af_ldo1);
+	if (ret < 0)
+		pr_err("enable regulator ak7377af_ldo1 fail, ret = %d\n", ret);
+	retval |= ret;
+    pr_err("get ak7377af_ldo1 enable\n");
+
+	return retval;
+}
+
+static int AK7377AF_panel_ldo1_disable(struct device *dev)
+{
+	int ret = 0;
+	int retval = 0;
+
+	AK7377AF_ldo1_regulator_init(dev);
+
+	ret = regulator_disable(ak7377af_ldo1);
+	if (ret < 0)
+		pr_err("disable regulator ak7377af_ldo1 fail, ret = %d\n", ret);
+	retval |= ret;
+    pr_err("disable regulator ak7377af_ldo1\n");
+
+	return retval;
+}
+#endif
+

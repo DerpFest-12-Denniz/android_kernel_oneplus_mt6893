@@ -94,11 +94,9 @@ struct ion_buffer {
 	struct list_head attachments;
 #endif
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_DUMP_TASKS_MEM)
-	/* record ions info of task. */
 	struct task_struct *tsk;
 #endif
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_MEMLEAK_DETECT_THREAD) && defined(CONFIG_SVELTE)
-	/* add record the buffer create time and calc the buffer age on dump. */
 	unsigned long jiffies;
 #endif
 };
@@ -564,5 +562,8 @@ void user_ion_free_nolock(struct ion_client *client, struct ion_handle *handle);
 #ifdef CONFIG_OPLUS_ION_BOOSTPOOL
 inline is_allocator_svc(struct task_struct *tsk);
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
+struct ion_handle *__ion_alloc(struct ion_client *client, size_t len,
+			       size_t align, unsigned int heap_id_mask,
+			       unsigned int flags, bool grab_handle);
 
 #endif /* _ION_PRIV_H */

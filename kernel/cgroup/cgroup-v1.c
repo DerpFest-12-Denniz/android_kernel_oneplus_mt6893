@@ -14,10 +14,6 @@
 #include <linux/pid_namespace.h>
 #include <linux/cgroupstats.h>
 
-#ifdef OPLUS_FEATURE_HANS_FREEZE
-#include <linux/freezer.h>
-#endif /*OPLUS_FEATURE_HANS_FREEZE*/
-
 #include <trace/events/cgroup.h>
 #ifdef CONFIG_MTK_TASK_TURBO
 #include <mt-plat/turbo_common.h>

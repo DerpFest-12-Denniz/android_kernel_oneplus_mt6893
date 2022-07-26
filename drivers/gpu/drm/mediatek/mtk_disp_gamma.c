@@ -481,7 +481,15 @@ static const struct mtk_disp_gamma_data mt6873_gamma_driver_data = {
 	.support_shadow = false,
 };
 
+static const struct mtk_disp_gamma_data mt6781_gamma_driver_data = {
+	.support_shadow = false,
+};
+
 static const struct mtk_disp_gamma_data mt6853_gamma_driver_data = {
+	.support_shadow = false,
+};
+
+static const struct mtk_disp_gamma_data mt6877_gamma_driver_data = {
 	.support_shadow = false,
 };
 
@@ -498,7 +506,11 @@ static const struct of_device_id mtk_disp_gamma_driver_dt_match[] = {
 	  .data = &mt6873_gamma_driver_data},
 	{ .compatible = "mediatek,mt6853-disp-gamma",
 	  .data = &mt6853_gamma_driver_data},
+	{ .compatible = "mediatek,mt6877-disp-gamma",
+	  .data = &mt6877_gamma_driver_data},
 	{ .compatible = "mediatek,mt6833-disp-gamma",
+	  .data = &mt6833_gamma_driver_data},
+	{ .compatible = "mediatek,mt6781-disp-gamma",
 	  .data = &mt6833_gamma_driver_data},
 	{},
 };

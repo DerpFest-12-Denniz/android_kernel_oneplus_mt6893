@@ -42,5 +42,7 @@ enum androidlog_issue{
 };
 
 extern void mm_keylog_write(const char *logmessage, const char *cause, int id);
-extern void mm_keylog_write_modemdump(unsigned int hashId, const char *cause, int id);
+/* #ifdef OPLUS_FEATURE_MODEM_MINIDUMP */
+extern void mm_keylog_write_modemdump(unsigned int hashId, const char *cause, int id, char *subsys);
+/* #endif OPLUS_FEATURE_MODEM_MINIDUMP */
 #endif

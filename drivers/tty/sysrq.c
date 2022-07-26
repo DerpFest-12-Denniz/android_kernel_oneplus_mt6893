@@ -497,7 +497,7 @@ static struct sysrq_key_op *sysrq_key_table[36] = {
 	NULL,				/* x */
 	/* y: May be registered on sparc64 for global register dump */
 #ifdef CONFIG_OPLUS_FEATURE_PANIC_FLUSH
-	&sysrq_flush_op,                 /* y */
+	&sysrq_flush_op,		/* y */
 #else
 	NULL,				/* y */
 #endif

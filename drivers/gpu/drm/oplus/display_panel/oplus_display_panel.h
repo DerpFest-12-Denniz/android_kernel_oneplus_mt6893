@@ -116,9 +116,26 @@ struct kernel_loglevel {
 	unsigned int log_level;
 };
 
+#define RAMLESS_AOD_AREA_NUM 6
+struct panel_aod_area {
+	uint32_t x;
+	uint32_t y;
+	uint32_t w;
+	uint32_t h;
+	uint32_t color;
+	uint32_t bitdepth;
+	uint32_t mono;
+	uint32_t gray;
+};
+
+struct panel_aod_area_para {
+	struct panel_aod_area aod_area[RAMLESS_AOD_AREA_NUM];
+	uint32_t size;
+};
+
 /*oplus ioctl case start*/
 #define PANEL_COMMOND_BASE 0x00
-#define PANEL_COMMOND_MAX  0x40
+#define PANEL_COMMOND_MAX  0x5D
 
 #define PANEL_IOCTL_SET_POWER				  PANEL_IOW(0x01, struct panel_vol_set)
 #define PANEL_IOCTL_GET_POWER				  PANEL_IOWR(0x02, struct panel_vol_get)
@@ -160,15 +177,20 @@ struct kernel_loglevel {
 #define PANEL_IOCTL_GET_ROUNDCORNER	          PANEL_IOWR(0x26, unsigned int)
 #define PANEL_IOCTL_SET_DYNAMIC_OSC_CLOCK	  PANEL_IOW(0x27, unsigned int)
 #define PANEL_IOCTL_GET_DYNAMIC_OSC_CLOCK	  PANEL_IOWR(0x28, unsigned int)
-#define PANEL_IOCTL_SET_FINGER_PRINT	      PANEL_IOW(0x29, unsigned int)
-#define PANEL_IOCTL_SET_OPLUS_BRIGHTNESS		  PANEL_IOW(0x2A, unsigned int)
-#define PANEL_IOCTL_GET_OPLUS_BRIGHTNESS		  PANEL_IOWR(0x2B, unsigned int)
+#define PANEL_IOCTL_SET_FP_PRESS              PANEL_IOW(0x29, unsigned int)
+#define PANEL_IOCTL_SET_OPLUS_BRIGHTNESS      PANEL_IOW(0x2A, unsigned int)
+#define PANEL_IOCTL_GET_OPLUS_BRIGHTNESS      PANEL_IOWR(0x2B, unsigned int)
 #define PANEL_IOCTL_SET_LCM_CABC	          PANEL_IOW(0x2C, unsigned int)
 #define PANEL_IOCTL_GET_LCM_CABC		      PANEL_IOWR(0x2D, unsigned int)
-#define PANEL_IOCTL_SET_AOD_AREA	          PANEL_IOW(0x2E, unsigned int)
+#define PANEL_IOCTL_SET_AOD_AREA	          PANEL_IOW(0x2E, struct panel_aod_area_para)
+#define PANEL_IOCTL_GET_OPLUS_MAXBRIGHTNESS   PANEL_IOWR(0x2F, unsigned int)
 #define PANEL_IOCTL_SET_ESD                   PANEL_IOW(0x2F, unsigned int)
 #define PANEL_IOCTL_GET_ESD                   PANEL_IOW(0x30, unsigned int)
 #define PANEL_IOCTL_SET_MTK_LOG_LEVEL         PANEL_IOW(0x31, struct kernel_loglevel)
+#define PANEL_IOCTL_SET_CABC_STATUS			  PANEL_IOW(0x59, unsigned int)
+#define PANEL_IOCTL_GET_CABC_STATUS			  PANEL_IOWR(0x5A, unsigned int)
+#define PANEL_IOCTL_SET_DRE_STATUS			  PANEL_IOW(0x5B, unsigned int)
+#define PANEL_IOCTL_GET_DRE_STATUS			  PANEL_IOWR(0x5C, unsigned int)
 
 /*oplus ioctl case end*/
 

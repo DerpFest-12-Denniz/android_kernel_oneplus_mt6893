@@ -70,9 +70,7 @@
 #include <linux/scatterlist.h>
 
 //#ifdef OPLUS_FEATURE_NWPOWER
-extern void (*match_ipa_ip_wakeup)(int type, struct sk_buff *skb);
-extern void (*match_ipa_tcp_wakeup)(int type, struct sock *sk);
-extern void (*ipa_schedule_work)(void);
+#include <net/oplus_nwpower.h>
 //#endif /* OPLUS_FEATURE_NWPOWER */
 
 static void	tcp_v6_send_reset(const struct sock *sk, struct sk_buff *skb);
@@ -1416,9 +1414,7 @@ static int tcp_v6_rcv(struct sk_buff *skb)
 	struct net *net = dev_net(skb->dev);
 
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (match_ipa_ip_wakeup != NULL) {
-		match_ipa_ip_wakeup(2, skb);
-	}
+	oplus_match_ipa_ip_wakeup(OPLUS_TCP_TYPE_V6, skb);
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 
 	if (skb->pkt_type != PACKET_HOST)
@@ -1453,9 +1449,7 @@ lookup:
 		goto no_tcp_socket;
 
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (match_ipa_tcp_wakeup != NULL) {
-		match_ipa_tcp_wakeup(2, sk);
-	}
+	oplus_match_ipa_tcp_wakeup(OPLUS_TCP_TYPE_V6, sk);
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 
 process:
@@ -1562,9 +1556,7 @@ bad_packet:
 
 discard_it:
 	//#ifdef OPLUS_FEATURE_NWPOWER
-	if (ipa_schedule_work != NULL) {
-		ipa_schedule_work();
-	}
+	oplus_ipa_schedule_work();
 	//#endif /* OPLUS_FEATURE_NWPOWER */
 	kfree_skb(skb);
 	return 0;

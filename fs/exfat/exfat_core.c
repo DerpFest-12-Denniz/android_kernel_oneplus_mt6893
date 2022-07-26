@@ -3842,10 +3842,15 @@ s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_u
 
 						if ((++order) == 2)
 							uniname = p_uniname->name;
+#ifndef CONFIG_EXFAT_FS
+						else
+							uniname += 15;
+#else
 						else if (uniname == NULL)
 							return -2;
 						else
 							uniname += 15;
+#endif /* CONFIG_EXFAT_FS */
 
 						len = extract_uni_name_from_name_entry(name_ep, entry_uniname, order);
 

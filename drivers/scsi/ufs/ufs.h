@@ -227,6 +227,7 @@ enum health_desc_param {
        HEALTH_DESC_PARAM_LIFE_TIME_EST_B       = 0x4,
        //HEALTH_DESC_PARAM_VENDOR_PROPINFO	   = 0x5,
 };
+//#endif
 
 /* MTK PATCH: Read Geometry Descriptor for RPMB initialization */
 enum geometry_desc_param_offset {

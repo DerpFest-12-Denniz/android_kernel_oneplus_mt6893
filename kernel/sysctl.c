@@ -70,8 +70,9 @@
 #include <linux/uaccess.h>
 #include <asm/processor.h>
 
-/* stat cpu usage on each tick. */
-#include <linux/kernel_stat.h>
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_CTP)
+#include <linux/task_cpustats.h>
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_CTP) */
 
 #ifdef CONFIG_X86
 #include <asm/nmi.h>
@@ -98,10 +99,18 @@
 #include <linux/nmi.h>
 #endif
 
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+#include <linux/multi_kswapd.h>
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
+
 #if defined(CONFIG_SYSCTL)
 #if defined(CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE) && defined(CONFIG_OPLUS_FEATURE_DEATH_HEALER)
 #include <soc/oplus/system/hung_task_enhance.h>
 #endif
+
+#ifdef CONFIG_OPLUS_PREFER_SILVER
+#include <linux/prefer_silver.h>
+#endif /* CONFIG_OPLUS_PREFER_SILVER */
 
 /* External variables not in a header file. */
 extern int suid_dumpable;
@@ -128,7 +137,18 @@ static int sixty = 60;
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 //#ifdef CONFIG_UXCHAIN_V2
 int sysctl_uxchain_v2 = 1;
-int sysctl_mmapsem_uninterruptable_time;
+u64 sysctl_mmapsem_uninterruptable_time;
+#endif
+
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+extern sysctl_sched_impt_tgid;
+#endif
+#ifdef CONFIG_OPLUS_BINDER_STRATEGY
+#include <soc/oplus/healthinfo.h>
+extern int sysctl_ob_control_enable;
+extern int sysctl_binder_status_record;
+extern int ob_pid;
+extern int sysctl_ob_control_handler(struct ctl_table *table, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
 #endif
 
 static int __maybe_unused neg_one = -1;
@@ -144,15 +164,15 @@ static int one_hundred = 100;
 #ifdef CONFIG_MTK_GMO_RAM_OPTIMIZE
 static int two_hundred = 200;
 #endif
-#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
-unsigned int sysctl_fg_io_opt = 1;
-#endif /*OPLUS_FEATURE_FG_IO_OPT*/
+
 #if defined(OPLUS_FEATURE_ZRAM_OPT) && defined(CONFIG_OPLUS_ZRAM_OPT)
 extern int direct_vm_swappiness;
 static int two_hundred = 200;
 #endif /*OPLUS_FEATURE_ZRAM_OPT*/
 
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
+unsigned int sysctl_fg_io_opt = 1;
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 static int one_thousand = 1000;
 #ifdef CONFIG_PRINTK
 static int ten_thousand = 10000;
@@ -160,14 +180,6 @@ static int ten_thousand = 10000;
 #ifdef CONFIG_PERF_EVENTS
 static int six_hundred_forty_kb = 640 * 1024;
 #endif
-
-#ifdef CONFIG_EXT4_FSYNC
-unsigned int sysctl_ext4_fsync_enable = 1;
-#else
-unsigned int sysctl_ext4_fsync_enable = 0;
-#endif
-unsigned int ext4_fsync_enable_status = 0;
-unsigned long sysctl_blkdev_issue_flush_count = 0;
 
 /* this is needed for the proc_doulongvec_minmax of vm_dirty_bytes */
 static unsigned long dirty_bytes_min = 2 * PAGE_SIZE;
@@ -331,14 +343,12 @@ static int max_sched_tunable_scaling = SCHED_TUNABLESCALING_END-1;
 #endif /* CONFIG_SMP */
 #endif /* CONFIG_SCHED_DEBUG */
 
+
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 int sysctl_sched_assist_enabled = 1;
 int sysctl_sched_assist_scene = 0;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
-#ifdef OPLUS_FEATURE_SPECIALOPT
-int sysctl_cpu_multi_thread = 0;
-#endif
 
 #ifdef CONFIG_COMPACTION
 static int min_extfrag_threshold;
@@ -359,22 +369,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 },
-{
-		.procname	= "ext4_fsync_enable",
-		.data		= &sysctl_ext4_fsync_enable,
-		.maxlen		= sizeof(unsigned int),
-		.mode		= 0666,
-		.proc_handler	= proc_dointvec,
-},
-{
-		.procname	= "blkdev_issue_flush_count",
-		.data		= &sysctl_blkdev_issue_flush_count,
-		.maxlen		= sizeof(unsigned long),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
-},
 #if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPLUS_FG_IO_OPT)
-/*add foreground io opt*/
 	{
 		.procname	= "fg_io_opt",
 		.data		= &sysctl_fg_io_opt,
@@ -1407,16 +1402,63 @@ static struct ctl_table kern_table[] = {
 		.extra2		= &one,
 	},
 #endif
-/* stat cpu usage on each tick. */
+#ifdef CONFIG_OPLUS_PREFER_SILVER
+	{
+		.procname	= "prefer_silver_enabled",
+		.data		= &sysctl_prefer_silver,
+		.maxlen		= sizeof(int),
+		.mode		= 0660,
+		.proc_handler = proc_dointvec,
+	},
+	{
+		.procname	= "heavy_task_thresh",
+		.data		= &sysctl_heavy_task_thresh,
+		.maxlen		= sizeof(int),
+		.mode		= 0444,
+		.proc_handler = proc_dointvec,
+	},
+	{
+		.procname	= "cpu_util_thresh",
+		.data		= &sysctl_cpu_util_thresh,
+		.maxlen		= sizeof(int),
+		.mode		= 0444,
+		.proc_handler = proc_dointvec,
+	},
+#endif /* CONFIG_OPLUS_PREFER_SILVER */
+#ifdef CONFIG_OPLUS_BINDER_STRATEGY
+	{
+		.procname	= "oplus_binder_control_enabled",
+		.data		= &sysctl_ob_control_enable,
+		.maxlen 	= sizeof(int),
+		.mode		= 0660,
+		.proc_handler = sysctl_ob_control_handler,
+	},
+	{
+		.procname       = "oplus_binder_status_enabled",
+		.data           = &sysctl_binder_status_record,
+		.maxlen         = sizeof(int),
+		.mode           = 0660,
+		.proc_handler = proc_dointvec,
+	},
+	{
+		.procname	= "oplus_bg_thread_pid",
+		.data		= &ob_pid,
+		.maxlen 	= sizeof(int),
+		.mode		= 0660,
+		.proc_handler = proc_dointvec,
+	},
+#endif
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_CTP)
 	{
 		.procname	= "task_cpustats_enable",
 		.data		= &sysctl_task_cpustats_enable,
-		.maxlen 	= sizeof(unsigned int),
+		.maxlen		= sizeof(unsigned int),
 		.mode		= 0666,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1 	= &zero,
-		.extra2 	= &one,
+		.extra1         = &zero,
+		.extra2		= &one,
 	},
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_CTP) */
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	{
 		.procname	= "sched_assist_enabled",
@@ -1469,24 +1511,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0666,
 		.proc_handler = sysctl_sched_assist_input_boost_ctrl_handler,
 	},
-	{
-		.procname	= "sysctl_ib_duration_coedecay",
-		.data		= &sysctl_sched_assist_ib_duration_coedecay,
-		.maxlen 	= sizeof(int),
-		.mode		= 0666,
-		.proc_handler = sysctl_sched_assist_input_boost_ctrl_handler,
-	},
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
-#ifdef OPLUS_FEATURE_SPECIALOPT
-		{
-			.procname	= "cpu_multi_thread",
-			.data		= &sysctl_cpu_multi_thread,
-			.maxlen 	= sizeof(int),
-			.mode		= 0666,
-			.proc_handler = proc_dointvec,
-		},
-#endif /* OPLUS_FEATURE_SPECIALOPT */
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 //#ifdef CONFIG_UXCHAIN_V2
 	{
@@ -1500,6 +1525,15 @@ static struct ctl_table kern_table[] = {
 		.procname	= "mmapsem_uninterruptable_time",
 		.data		= &sysctl_mmapsem_uninterruptable_time,
 		.maxlen = sizeof(u64),
+		.mode		= 0666,
+		.proc_handler = proc_dointvec,
+	},
+#endif
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+	{
+		.procname	= "sched_impt_tgid",
+		.data		= &sysctl_sched_impt_tgid,
+		.maxlen 	= sizeof(int),
 		.mode		= 0666,
 		.proc_handler = proc_dointvec,
 	},
@@ -1565,7 +1599,7 @@ static struct ctl_table vm_table[] = {
 		.proc_handler	= overcommit_kbytes_handler,
 	},
 	{
-		.procname	= "page-cluster",
+		.procname	= "page-cluster", 
 		.data		= &page_cluster,
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
@@ -1663,7 +1697,7 @@ static struct ctl_table vm_table[] = {
 		.extra2 	= &two_hundred,
 	},
 #endif
-#ifdef CONFIG_DAYAMIC_TUNNING_SWAPPINESS
+#ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 	{
 		.procname	= "vm_swappiness_threshold1",
 		.data		= &vm_swappiness_threshold1,
@@ -1794,6 +1828,17 @@ static struct ctl_table vm_table[] = {
 		.proc_handler	= min_free_kbytes_sysctl_handler,
 		.extra1		= &zero,
 	},
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+	{
+	.procname	= "kswapd_threads",
+	.data		= &kswapd_threads,
+	.maxlen		= sizeof(kswapd_threads),
+	.mode		= 0644,
+	.proc_handler	= kswapd_threads_sysctl_handler,
+	.extra1		= &one,
+	.extra2		= &max_kswapd_threads,
+},
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
 	{
 		.procname	= "watermark_scale_factor",
 		.data		= &watermark_scale_factor,
@@ -2134,7 +2179,7 @@ static struct ctl_table fs_table[] = {
 		.mode		= 0555,
 		.child		= inotify_table,
 	},
-#endif
+#endif	
 #ifdef CONFIG_EPOLL
 	{
 		.procname	= "epoll",
@@ -2580,12 +2625,12 @@ static int __do_proc_dointvec(void *tbl_data, struct ctl_table *table,
 	int *i, vleft, first = 1, err = 0;
 	size_t left;
 	char *kbuf = NULL, *p;
-
+	
 	if (!tbl_data || !table->maxlen || !*lenp || (*ppos && !write)) {
 		*lenp = 0;
 		return 0;
 	}
-
+	
 	i = (int *) tbl_data;
 	vleft = table->maxlen / sizeof(*i);
 	left = *lenp;
@@ -2811,7 +2856,7 @@ static int do_proc_douintvec(struct ctl_table *table, int write,
  * @ppos: file position
  *
  * Reads/writes up to table->maxlen/sizeof(unsigned int) integer
- * values from/to the user buffer, treated as an ASCII string.
+ * values from/to the user buffer, treated as an ASCII string. 
  *
  * Returns 0 on success.
  */
@@ -3267,7 +3312,7 @@ static int do_proc_dointvec_ms_jiffies_conv(bool *negp, unsigned long *lvalp,
  * @ppos: file position
  *
  * Reads/writes up to table->maxlen/sizeof(unsigned int) integer
- * values from/to the user buffer, treated as an ASCII string.
+ * values from/to the user buffer, treated as an ASCII string. 
  * The values read are assumed to be in seconds, and are converted into
  * jiffies.
  *
@@ -3289,8 +3334,8 @@ int proc_dointvec_jiffies(struct ctl_table *table, int write,
  * @ppos: pointer to the file position
  *
  * Reads/writes up to table->maxlen/sizeof(unsigned int) integer
- * values from/to the user buffer, treated as an ASCII string.
- * The values read are assumed to be in 1/USER_HZ seconds, and
+ * values from/to the user buffer, treated as an ASCII string. 
+ * The values read are assumed to be in 1/USER_HZ seconds, and 
  * are converted into jiffies.
  *
  * Returns 0 on success.
@@ -3312,8 +3357,8 @@ int proc_dointvec_userhz_jiffies(struct ctl_table *table, int write,
  * @ppos: the current position in the file
  *
  * Reads/writes up to table->maxlen/sizeof(unsigned int) integer
- * values from/to the user buffer, treated as an ASCII string.
- * The values read are assumed to be in 1/1000 seconds, and
+ * values from/to the user buffer, treated as an ASCII string. 
+ * The values read are assumed to be in 1/1000 seconds, and 
  * are converted into jiffies.
  *
  * Returns 0 on success.

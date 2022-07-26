@@ -1,5 +1,6 @@
 /***********************************************************
 ** Copyright (C), 2008-2019, OPLUS Mobile Comm Corp., Ltd.
+**
 ** File: - of2fs_bigdata.h
 ** Description: f2fs bigdata statistics code
 **
@@ -122,4 +123,4 @@ static inline struct f2fs_bigdata_info *F2FS_BD_STAT(struct f2fs_sb_info *sbi)
 #define bd_lock_init(sbi) spin_lock_init(&(sbi)->bd_lock)
 #define bd_lock(sbi) spin_lock(&(sbi)->bd_lock)
 #define bd_unlock(sbi) spin_unlock(&(sbi)->bd_lock)
-#endif
+#endif /* _OF2FS_BIGDATA_H */

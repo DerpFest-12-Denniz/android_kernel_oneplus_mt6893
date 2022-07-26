@@ -12,7 +12,6 @@
 #include "oplus_display_panel.h"
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-
 /*
 *set_seed equals to dim_dc_alpha
 *dc_enable equals to dimlay_bl_en
@@ -42,17 +41,23 @@ extern int oplus_display_set_mtk_loglevel(void *buf);
 extern int oplus_display_panel_get_vendor(void *buf);
 extern int oplus_display_panel_set_seed(void *buf);
 extern int oplus_display_panel_get_seed(void *buf);
+extern int oplus_panel_set_aod_light_mode(void *buf);
+extern int oplus_panel_get_aod_light_mode(void *buf);
+extern int oplus_display_panel_notify_fp_press(void *buf);
+extern int oplus_display_set_cabc_status(void *buf);
+extern int oplus_display_get_cabc_status(void *buf);
+extern int oplus_display_set_aod_area(void *buf);
 
 static const struct panel_ioctl_desc panel_ioctls[] = {
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_POWER, oplus_display_panel_set_pwr),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_POWER, oplus_display_panel_get_pwr),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_SEED, oplus_display_panel_set_seed),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_SEED, oplus_display_panel_get_seed),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_AOD, oplus_panel_set_aod_light_mode),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_AOD, oplus_panel_get_aod_light_mode),
 	/*PANEL_IOCTL_DEF(PANEL_IOCTL_GET_PANELID, oplus_display_panel_get_id),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_FFL, oplus_display_panel_set_ffl),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_FFL, oplus_display_panel_get_ffl),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_AOD, oplus_panel_set_aod_light_mode),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_AOD, oplus_panel_get_aod_light_mode),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_MAX_BRIGHTNESS, oplus_display_panel_set_max_brightness),*/
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_MAX_BRIGHTNESS, oplus_display_panel_get_max_brightness),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_PANELINFO, oplus_display_panel_get_vendor),
@@ -86,12 +91,16 @@ static const struct panel_ioctl_desc panel_ioctls[] = {
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_DYNAMIC_OSC_CLOCK, oplus_display_panel_get_dynamic_osc_clock),*/
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_OPLUS_BRIGHTNESS, oplus_display_set_brightness),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_OPLUS_BRIGHTNESS, oplus_display_get_brightness),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_LCM_CABC, oplus_display_panel_set_cabc),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_LCM_CABC, oplus_display_panel_get_cabc),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_FINGER_PRINT, oplus_display_panel_set_finger_print),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_FP_PRESS, oplus_display_panel_notify_fp_press),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_ESD, oplus_display_panel_set_esd),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_ESD, oplus_display_panel_get_esd),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_MTK_LOG_LEVEL, oplus_display_set_mtk_loglevel),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_CABC_STATUS, oplus_display_set_cabc_status),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_CABC_STATUS, oplus_display_get_cabc_status),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_DRE_STATUS, oplus_display_set_cabc_status),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_DRE_STATUS, oplus_display_get_cabc_status),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_AOD_AREA, oplus_display_set_aod_area),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_OPLUS_MAXBRIGHTNESS, oplus_display_panel_get_max_brightness),
 };
 
 static int panel_open(struct inode *inode, struct file *filp)
@@ -121,11 +130,12 @@ static ssize_t panel_write(struct file *file, const char __user *buffer,
 	return count;
 }
 
+#define STATIC_DATA_MAX_LENGTH    200
 long panel_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int in_size, out_size, drv_size, ksize;
 	unsigned int nr = PANEL_IOCTL_NR(cmd);
-	char static_data[128];
+	char static_data[STATIC_DATA_MAX_LENGTH];
 	char *kdata = NULL;
 	const struct panel_ioctl_desc *ioctl = NULL;
 	oplus_panel_feature *func = NULL;
@@ -213,7 +223,7 @@ static const struct file_operations panel_ops =
 	.write              = panel_write,
 };
 
-static int __init oplus_display_panel_init()
+static int __init oplus_display_panel_init(void)
 {
 	int rc = 0;
 
@@ -268,4 +278,4 @@ void __exit oplus_display_panel_exit()
 module_init(oplus_display_panel_init);
 module_exit(oplus_display_panel_exit);
 MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Lisheng <lisheng1@oplus.com>");
+MODULE_AUTHOR("Lisheng");

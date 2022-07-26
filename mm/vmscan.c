@@ -57,7 +57,6 @@
 #include <linux/balloon_compaction.h>
 
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-/* collect interrupt doing time during process reclaim, only effect in age test */
 #include <linux/process_mm_reclaim.h>
 #endif
 
@@ -66,9 +65,14 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
 
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+#include <linux/multi_kswapd.h>
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
+
 #if defined(OPLUS_FEATURE_ZRAM_OPT) && defined(CONFIG_FG_TASK_UID)
 #include <linux/healthinfo/fg.h>
 #endif /*OPLUS_FEATURE_ZRAM_OPT*/
+
 
 struct scan_control {
 	/* How many pages shrink_list() should reclaim */
@@ -134,9 +138,6 @@ struct scan_control {
 	struct vm_area_struct *target_vma;
 
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	/*
-	 * use mm_walk to regonize the behaviour of process reclaim.
-	 */
 	struct mm_walk *walk;
 #endif
 };
@@ -180,7 +181,7 @@ int vm_swappiness = 60;
 int direct_vm_swappiness = 60;
 #endif /*OPLUS_FEATURE_ZRAM_OPT*/
 
-#ifdef CONFIG_DAYAMIC_TUNNING_SWAPPINESS
+#ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 int vm_swappiness_threshold1 = 0;
 int vm_swappiness_threshold2 = 0;
 int swappiness_threshold1_size = 0;
@@ -493,7 +494,7 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
  *
  * Returns the number of reclaimed slab objects.
  */
-static unsigned long shrink_slab(gfp_t gfp_mask, int nid,
+unsigned long shrink_slab(gfp_t gfp_mask, int nid,
 				 struct mem_cgroup *memcg,
 				 unsigned long nr_scanned,
 				 unsigned long nr_eligible)
@@ -1031,7 +1032,6 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		bool dirty, writeback;
 
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-		/* check whether the reclaim process should cancel*/
 		if (sc->walk && is_reclaim_should_cancel(sc->walk))
 			break;
 #endif
@@ -1505,7 +1505,6 @@ unsigned long nswap_reclaim_page_list(struct list_head *page_list,
 
 #ifdef CONFIG_PROCESS_RECLAIM
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-/* record the scaned task*/
 unsigned long reclaim_pages_from_list(struct list_head *page_list,
 			struct vm_area_struct *vma, struct mm_walk *walk)
 #else
@@ -1523,7 +1522,6 @@ unsigned long reclaim_pages_from_list(struct list_head *page_list,
 		.may_swap = 1,
 		.target_vma = vma,
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-		/* record the scaned task*/
 		.walk = walk,
 #endif
 	};
@@ -1796,8 +1794,6 @@ int isolate_lru_page(struct page *page)
 
 	VM_BUG_ON_PAGE(!page_count(page), page);
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	/* Because process reclaim is doing page by
-	 * page, so there many compound pages are relcaimed, so too many warning msg on this case. */
 	WARN_RATELIMIT((!current_is_reclaimer() && PageTail(page)), "trying to isolate tail page");
 #else
 	WARN_RATELIMIT(PageTail(page), "trying to isolate tail page");
@@ -2218,23 +2214,26 @@ static void shrink_active_list(unsigned long nr_to_scan,
 				unlock_page(page);
 			}
 		}
-
-		if (page_referenced(page, 0, sc->target_mem_cgroup,
-				    &vm_flags)) {
-			nr_rotated += hpage_nr_pages(page);
-			/*
-			 * Identify referenced, file-backed active pages and
-			 * give them one more trip around the active list. So
-			 * that executable code get better chances to stay in
-			 * memory under moderate memory pressure.  Anon pages
-			 * are not likely to be evicted by use-once streaming
-			 * IO, plus JVM can create lots of anon VM_EXEC pages,
-			 * so we ignore them here.
-			 */
-			if ((vm_flags & VM_EXEC) && page_is_file_cache(page)) {
-				list_add(&page->lru, &l_active);
-				continue;
+		if (page_mapcount(page) < 20) {
+			if (page_referenced(page, 0, sc->target_mem_cgroup,
+					    &vm_flags)) {
+				nr_rotated += hpage_nr_pages(page);
+				/*
+				* Identify referenced, file-backed active pages and
+				* give them one more trip around the active list. So
+				* that executable code get better chances to stay in
+				* memory under moderate memory pressure.  Anon pages
+				* are not likely to be evicted by use-once streaming
+				* IO, plus JVM can create lots of anon VM_EXEC pages,
+				* so we ignore them here.
+				*/
+				if ((vm_flags & VM_EXEC) && page_is_file_cache(page)) {
+					list_add(&page->lru, &l_active);
+					continue;
+				}
 			}
+		} else {
+			nr_rotated += (page_mapcount(page) > 0 ? hpage_nr_pages(page) : 0);
 		}
 
 		ClearPageActive(page);	/* we are de-activating */
@@ -2434,9 +2433,15 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 	unsigned long anon, file;
 	unsigned long ap, fp;
 	enum lru_list lru;
+	unsigned long totalswap = total_swap_pages;
+#if defined(CONFIG_NANDSWAP)
+	if (nandswap_si)
+		totalswap -= nandswap_si->pages;
+#endif
+	/* use vm_swappiness defaultly */
+	swappiness = vm_swappiness;
 
-#ifdef CONFIG_DAYAMIC_TUNNING_SWAPPINESS
-
+#ifdef CONFIG_DYNAMIC_TUNNING_SWAPPINESS
 	if (current_is_kswapd()) {
 		unsigned long nr_file_pages =
 			global_node_page_state(NR_ACTIVE_FILE) +
@@ -2455,9 +2460,10 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 #endif
 
 #if defined(OPLUS_FEATURE_ZRAM_OPT) && defined(CONFIG_OPLUS_ZRAM_OPT)
+/*yixue.ge@psw.bsp.kernel 20170720 add for add direct_vm_swappiness*/
 	if (!current_is_kswapd())
 		swappiness = direct_vm_swappiness;
-	if (!sc->may_swap || (mem_cgroup_get_nr_swap_pages(memcg) <= total_swap_pages>>6)) {
+	if (!sc->may_swap || (mem_cgroup_get_nr_swap_pages(memcg) <= totalswap>>6)) {
 #else
 	/* If we have no swap space, do not bother scanning anon pages. */
 	if (!sc->may_swap || mem_cgroup_get_nr_swap_pages(memcg) <= 0) {
@@ -2923,10 +2929,16 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 			shrink_node_memcg(pgdat, memcg, sc, &lru_pages);
 			node_lru_pages += lru_pages;
 
-			if (memcg)
-				shrink_slab(sc->gfp_mask, pgdat->node_id,
-					    memcg, sc->nr_scanned - scanned,
-					    lru_pages);
+			if (memcg) {
+				if (!wakeup_shrink_slabd(sc->gfp_mask,
+						pgdat->node_id,
+						memcg, sc->nr_scanned - scanned,
+					    	lru_pages, reclaim_state)) {
+					shrink_slab(sc->gfp_mask, pgdat->node_id,
+							memcg, sc->nr_scanned - scanned,
+							lru_pages);
+				}
+			}
 
 			/* Record the group's reclaim efficiency */
 			vmpressure(sc->gfp_mask, memcg, false,
@@ -2954,10 +2966,16 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 		 * Shrink the slab caches in the same proportion that
 		 * the eligible LRU pages were scanned.
 		 */
-		if (global_reclaim(sc))
-			shrink_slab(sc->gfp_mask, pgdat->node_id, NULL,
-				    sc->nr_scanned - nr_scanned,
-				    node_lru_pages);
+		if (global_reclaim(sc)) {
+			if (!wakeup_shrink_slabd(sc->gfp_mask,
+						pgdat->node_id,
+						NULL, sc->nr_scanned - nr_scanned,
+						node_lru_pages, reclaim_state)) {
+				shrink_slab(sc->gfp_mask, pgdat->node_id, NULL,
+						sc->nr_scanned - nr_scanned,
+						node_lru_pages);
+			}
+		}
 
 		if (reclaim_state) {
 			sc->nr_reclaimed += reclaim_state->reclaimed_slab;
@@ -3881,7 +3899,11 @@ static void kswapd_try_to_sleep(pg_data_t *pgdat, int alloc_order, int reclaim_o
  * If there are applications that are active memory-allocators
  * (most normal use), this basically shouldn't matter.
  */
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+ int kswapd(void *p)
+ #else
 static int kswapd(void *p)
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
 {
 	unsigned int alloc_order, reclaim_order;
 	unsigned int classzone_idx = MAX_NR_ZONES - 1;
@@ -4046,6 +4068,9 @@ unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
    restore their cpu bindings. */
 static int kswapd_cpu_online(unsigned int cpu)
 {
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+	return kswapd_cpu_online_ext(cpu);
+#else
 	int nid;
 
 	for_each_node_state(nid, N_MEMORY) {
@@ -4059,6 +4084,7 @@ static int kswapd_cpu_online(unsigned int cpu)
 			set_cpus_allowed_ptr(pgdat->kswapd, mask);
 	}
 	return 0;
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
 }
 
 /*
@@ -4067,6 +4093,9 @@ static int kswapd_cpu_online(unsigned int cpu)
  */
 int kswapd_run(int nid)
 {
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+		return kswapd_run_ext(nid);
+#else
 	pg_data_t *pgdat = NODE_DATA(nid);
 	int ret = 0;
 
@@ -4082,6 +4111,7 @@ int kswapd_run(int nid)
 		pgdat->kswapd = NULL;
 	}
 	return ret;
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
 }
 
 /*
@@ -4090,12 +4120,17 @@ int kswapd_run(int nid)
  */
 void kswapd_stop(int nid)
 {
+#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_OPLUS_MULTI_KSWAPD)
+	return kswapd_stop_ext(nid);
+#else
 	struct task_struct *kswapd = NODE_DATA(nid)->kswapd;
 
 	if (kswapd) {
 		kthread_stop(kswapd);
 		NODE_DATA(nid)->kswapd = NULL;
 	}
+#endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
+
 }
 
 static int __init kswapd_init(void)

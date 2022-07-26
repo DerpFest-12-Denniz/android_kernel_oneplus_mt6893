@@ -7,7 +7,6 @@
  ** Version: 1.0                                                                           
  ** --------------------------- Revision History: --------------------------------         
  **  <author>    <data>          <desc>
- ** tong.han@BasicDrv.TP&LCD 11/01/2014 add this file                                      
  ************************************************************************************/     
 #ifndef _OPLUS_BOOT_TYPE_H    
 #define _OPLUS_BOOT_TYPE_H

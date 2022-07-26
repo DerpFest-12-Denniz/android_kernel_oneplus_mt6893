@@ -155,10 +155,12 @@ static int mtktscharger_get_hw_temp(void)
 		charger_idx, &tmin, &tmax);
 
 	if (ret >= 0) {
-		if (pthermal_consumer->support_ntc_01c_precision)
+		if (pthermal_consumer->support_ntc_01c_precision) {
 			t = tmax * 100;
-		else
+		} else {
+/*OPLUS_FEATURE_CHG_BASIC*/
 			t = tmax * 1000;
+		}
 		prev_temp = t;
 	} else if (ret == -ENODEV) {
 	} else {

@@ -252,9 +252,9 @@ static ssize_t fork_para_monitor_read_proc(struct file *file, char __user *buf,
 {
         char page[256] = {0};
         int ret = 0;
-        //ret = snprintf(page, 255, " times:%d\n father pid:%d\n child pid:%d\n", happend_times, fork_pid_father, fork_pid_child);
-
-        //ret = simple_read_from_buffer(buf, count, off, page, strlen(page));
+        /* ret = snprintf(page, 255, " times:%d\n father pid:%d\n child pid:%d\n",
+		happend_times, fork_pid_father, fork_pid_child); 
+        ret = simple_read_from_buffer(buf, count, off, page, strlen(page)); */
         return ret;
 }
 
@@ -478,6 +478,12 @@ pmic_get_submask(struct device_node *np, struct device *dev)
 	uint32_t *adc_ranges = NULL;
 	int i = 0;
 	struct iio_channel *ADC_channel = NULL;
+	bool is_mtk_use_adc = false;
+
+	if (of_property_read_bool(np, "is_mtk_use_adc")) {
+		dev_msg("is_mtk_use_adc value is true\n");
+		is_mtk_use_adc = true;
+	}
 
 	size =
 		of_property_count_elems_of_size(np, "adc_ranges", sizeof(uint32_t));
@@ -504,8 +510,12 @@ pmic_get_submask(struct device_node *np, struct device *dev)
 		goto end;
 	}
 	iio_channel_release(ADC_channel);
-
-	adc_value /= 1000;
+	if(is_mtk_use_adc) {
+		dev_msg("adc value raw = %d\n", adc_value);
+		adc_value = adc_value*1500/4096;
+	} else {
+		adc_value /= 1000;
+	}
 	dev_msg("adc value %d\n", adc_value);
 
 	if (adc_value > 1750) {
@@ -591,7 +601,8 @@ reinit_aboard_id_for_brandon(struct device *dev, struct device_info *dev_info)
 	adc_value /= 1000;
 	dev_msg("adc value %d\n", adc_value);
 
-	operate = get_Operator_Version();
+	/* operate = get_Operator_Version(); */
+	operate = 1;
 	if ((2 == operate) || (8 == operate)) {
 		if ((adc_value >= 250) && (adc_value <= 400)) {
 			ret = 0;
@@ -706,12 +717,36 @@ reinit_aboard_id(struct device *dev, struct manufacture_info *info)
 		set_gpios_sleep(dev_info);
 		sleep_val  = gpio_get_submask(np);
 		set_gpios_idle(dev_info);
-		if (active_val == 1 && sleep_val == 0) {		/*high-resistance*/
-			hw_mask = 0;
-		} else if (active_val == 1 && sleep_val == 1) {		/*external pull-up*/
-			hw_mask = 2;
-		} else if (active_val == 0 && sleep_val == 0) {		/*external pull-down*/
-			hw_mask = 1;
+		if (get_project() == 0X2169E || get_project() == 0X2169F ||
+                	get_project() == 21711 || get_project() == 21712 ||
+			get_project() == 0x216C9 || get_project() == 0x216CA) {
+			if (active_val == 3 && sleep_val == 0) {	/*2169E 216CA*/
+				hw_mask = 0;
+			} else if (active_val == 2 && sleep_val == 0) {	/*2169F 216C9*/
+				hw_mask = 1;
+			} else if (active_val == 3 && sleep_val == 1) {	/*21711*/
+				hw_mask = 2;
+			} else if (active_val == 1 && sleep_val == 0) {	/*21712*/
+				hw_mask = 3;
+			} else if (active_val == 0 && sleep_val == 0) {	/*NA*/
+				hw_mask = 4;
+			} else if (active_val == 1 && sleep_val == 1) {	/*NA*/
+				hw_mask = 5;
+			} else if (active_val == 3 && sleep_val == 2) {	/*NA*/
+				hw_mask = 6;
+			} else if (active_val == 2 && sleep_val == 2) {	/*NA*/
+				hw_mask = 7;
+			} else if (active_val == 3 && sleep_val == 3) {	/*NA*/
+				hw_mask = 8;
+			}
+		} else {
+			if (active_val == 1 && sleep_val == 0) {	/*high-resistance*/
+				hw_mask = 0;
+			} else if (active_val == 1 && sleep_val == 1) {	/*external pull-up*/
+				hw_mask = 2;
+			} else if (active_val == 0 && sleep_val == 0) {	/*external pull-down*/
+				hw_mask = 1;
+			}
 		}
 		dev_msg("active_val[%d] sleep_val[%d] hw_mask[%d]\n", active_val, sleep_val, hw_mask);
 		if (hw_mask < 0) {

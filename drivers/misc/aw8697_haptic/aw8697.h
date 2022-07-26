@@ -225,6 +225,10 @@ enum aw8697_haptic_activate_mode {
   AW8697_HAPTIC_ACTIVATE_CONT_MODE = 1,
 };
 
+enum aw8697_haptic_vibration_style {
+	AW8697_HAPTIC_VIBRATION_CRISP_STYLE = 0,
+	AW8697_HAPTIC_VIBRATION_SOFT_STYLE = 1,
+};
 
 enum aw8697_haptic_cont_vbat_comp_mode {
     AW8697_HAPTIC_CONT_VBAT_SW_COMP_MODE = 0,
@@ -373,7 +377,7 @@ struct aw8697 {
     struct mutex qos_lock;
     struct hrtimer timer;
     struct work_struct vibrator_work;
-    struct work_struct rtp_work;
+	struct delayed_work rtp_work;
     struct work_struct rtp_single_cycle_work;
     struct work_struct rtp_regroup_work;
     struct delayed_work ram_work;
@@ -399,6 +403,7 @@ struct aw8697 {
     int reset_gpio;
     int irq_gpio;
     int device_id;
+	int audio_delay;
 
     unsigned char hwen_flag;
     unsigned char flags;
@@ -407,6 +412,7 @@ struct aw8697 {
     unsigned char play_mode;
 
     unsigned char activate_mode;
+	unsigned char vibration_style;
 
     unsigned char auto_boost;
 
@@ -511,6 +517,7 @@ struct aw8697_que_seq {
 #define F0_VAL_MIN_0832                     2250
 #define F0_VAL_MAX_0833                     2380
 #define F0_VAL_MIN_0833                     2260
+#define F0_VAL_0832                         2300
 
 #define AW8697_HAPTIC_BASE_VOLTAGE          6000
 #define AW8697_HAPTIC_MAX_VOLTAGE           10000
@@ -545,11 +552,13 @@ struct aw8697_que_seq {
 #define RINGTONES_END_INDEX  40
 #define RINGTONES_SIMPLE_INDEX  48
 #define RINGTONES_PURE_INDEX    49
+#define OS12_NEW_RING_START     70
+#define OS12_NEW_RING_END       89
 #define NEW_RING_START          118
 #define NEW_RING_END            160
 #define OPLUS_RING_START       161
 #define OPLUS_RING_END         170
-#define OPLUS_NEW_RING_1_START  201
+#define OPLUS_NEW_RING_1_START  198
 #define OPLUS_NEW_RING_1_END    280
 #define OPLUS_NEW_RING_2_START  292
 #define OPLUS_NEW_RING_2_END    293

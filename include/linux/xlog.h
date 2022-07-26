@@ -1,11 +1,11 @@
 /******************************************************************
 ** Copyright (C), 2004-2017, OPLUS Mobile Comm Corp., Ltd.
+**
 ** File: - xlog.h
 ** Description: Source file for lcd drvier.
 ** lcd driver including parameter and power control.
 ** Version: 1.0
 ** Date : 2017/05/06
-** Author: ChaoYing.Chen@EXP.BSP.CHG.basic
 **
 ** ------------------------------- Revision History:---------------
 ** ChaoYing.Chen 2017/05/06 1.0 build this module

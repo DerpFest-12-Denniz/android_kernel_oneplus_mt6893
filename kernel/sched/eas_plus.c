@@ -11,11 +11,7 @@
  * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 #include <linux/stop_machine.h>
-#ifdef OPLUS_FEATURE_SPECIALOPT
-inline unsigned long task_util(struct task_struct *p);
-#else
 static inline unsigned long task_util(struct task_struct *p);
-#endif
 static int select_max_spare_capacity(struct task_struct *p, int target);
 int cpu_eff_tp = 1024;
 unsigned long long big_cpu_eff_tp = 1024;
@@ -91,12 +87,6 @@ update_system_overutilized(struct lb_env *env)
 				continue;
 
 			group_util += cpu_util(i);
-			if (cpu_overutilized(i)) {
-				if (capacity_orig_of(i) == min_capacity) {
-					intra_overutil = true;
-					break;
-				}
-			}
 		}
 
 		/*
@@ -450,6 +440,14 @@ static struct sched_entity
 	src_capacity = capacity_orig_of(cpu);
 	cfs_rq = &cpu_rq(cpu)->cfs;
 	se = __pick_first_entity(cfs_rq);
+#ifdef CONFIG_FAIR_GROUP_SCHED
+	if (!se && cfs_rq->h_nr_running > 1) {
+		se = cfs_rq->curr;
+		if (se && group_cfs_rq(se)) {
+			se = __pick_first_entity(group_cfs_rq(se));
+		}
+	}
+#endif	/* CONFIG_FAIR_GROUP_SCHED */
 	while (num_tasks && se) {
 		if (entity_is_task(se) &&
 		    cpumask_intersects(hmp_target_mask,
@@ -1136,11 +1134,7 @@ static int find_energy_efficient_cpu_enhanced(struct task_struct *p,
 	struct cpuidle_state *idle;
 	struct sched_domain *sd;
 	struct sched_group *sg;
-	bool cond = false;
 
-	if (sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE)|| sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI)) && oplus_task_misfit(p, this_cpu) && (p->ux_state & SA_TYPE_HEAVY)){
-		sync = 0;
-	}
 	if (sysctl_sched_sync_hint_enable && sync) {
 		if (cpumask_test_cpu(this_cpu, &p->cpus_allowed) &&
 			!cpu_isolated(this_cpu)) {
@@ -1158,12 +1152,6 @@ static int find_energy_efficient_cpu_enhanced(struct task_struct *p,
 	prefer_idle = schedtune_prefer_idle(p);
 	boosted = (schedtune_task_boost(p) > 0) || (uclamp_task_effective_util(p, UCLAMP_MIN) > 0);
 	target_cap = boosted ? 0 : ULONG_MAX;
-
-#if defined(OPLUS_FEATURE_SCHED_ASSIST)
-	set_ux_task_to_prefer_cpu_v1(p, &best_energy_cpu, &cond);
-	if (cond && best_energy_cpu >= 0)
-		return best_energy_cpu;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
 	sg = sd->groups;
 	do {
@@ -1269,7 +1257,17 @@ static int find_energy_efficient_cpu_enhanced(struct task_struct *p,
 				best_energy_cpu = best_idle_cpu;
 			}
 		}
+
+		mt_sched_printf(sched_eas_energy_calc,
+		    "prev_cpu=%d base_energy=%lu prev_energy=%lu prev_delta=%d",
+		    prev_cpu, base_energy_sg, prev_energy, (int)prev_delta);
+
+		mt_sched_printf(sched_eas_energy_calc,
+		    "max_spare_cap_cpu=%d best_idle_cpu=%d cur_energy=%lu cur_delta=%d",
+			max_spare_cap_cpu, best_idle_cpu, cur_energy, (int)cur_delta);
+
 	} while (sg = sg->next, sg != sd->groups);
+
 	/*
 	 * Pick the best CPU if prev_cpu cannot be used, or it it saves energy
 	 * used by prev_cpu.
@@ -1921,8 +1919,8 @@ void task_check_for_rotation(struct rq *src_rq)
 			continue;
 
 #if defined (CONFIG_SCHED_WALT) && defined (OPLUS_FEATURE_SCHED_ASSIST)
-		if (sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_INPUT))
-		&& is_heavy_ux_task(rq->curr))
+		if (sysctl_sched_assist_enabled && (sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_ANIM))
+		&& (is_heavy_ux_task(rq->curr) || is_sf(rq->curr)))
 			continue;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 		run = wc - rq->curr->last_enqueued_ts;

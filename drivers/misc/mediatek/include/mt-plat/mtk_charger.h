@@ -62,6 +62,7 @@ struct charger_consumer {
  * use charger_port1, charger_port2, ...
  * for most cases, use charging_port1
  */
+extern void Oplusimgsensor_powerstate_notify(bool val);
 extern struct charger_consumer *charger_manager_get_by_name(
 	struct device *dev,
 	const char *supply_name);

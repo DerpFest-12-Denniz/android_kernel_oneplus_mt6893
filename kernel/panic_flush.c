@@ -10,7 +10,7 @@
 #include <linux/blkdev.h>
 #include <linux/kthread.h>
 #include <linux/workqueue.h>
-#include <soc/oplus/system/oplus_project.h>
+#include <soc/oplus/oplus_project.h>
 
 #define PANIC_FLUSH_POLL_MS (10)
 

@@ -32,6 +32,7 @@
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
 #include "multi_freearea.h"
 #endif
+
 #define NUMA_STATS_THRESHOLD (U16_MAX - 2)
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
@@ -963,25 +964,25 @@ static void fill_contig_page_info(struct zone *zone,
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
     for (flc = 0; flc < FREE_AREA_COUNTS; flc++) {
 #endif
-    for (order = 0; order < MAX_ORDER; order++) {
-        unsigned long blocks;
+	for (order = 0; order < MAX_ORDER; order++) {
+		unsigned long blocks;
 
-        /* Count number of free blocks */
+		/* Count number of free blocks */
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
         blocks = zone->free_area[flc][order].nr_free;
 #else
-        blocks = zone->free_area[order].nr_free;
+		blocks = zone->free_area[order].nr_free;
 #endif
-        info->free_blocks_total += blocks;
+		info->free_blocks_total += blocks;
 
-        /* Count free base pages */
-        info->free_pages += blocks << order;
+		/* Count free base pages */
+		info->free_pages += blocks << order;
 
-        /* Count the suitable free blocks */
-        if (order >= suitable_order)
-            info->free_blocks_suitable += blocks <<
-                        (order - suitable_order);
-    }
+		/* Count the suitable free blocks */
+		if (order >= suitable_order)
+			info->free_blocks_suitable += blocks <<
+						(order - suitable_order);
+	}
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
     }
 #endif
@@ -1069,10 +1070,9 @@ const char * const vmstat_text[] = {
 	"nr_zspages",
 #endif
 	"nr_free_cma",
-#ifdef OPLUS_FEATURE_HEALTHINFO
-/*add ion cached account*/
-	"nr_ioncache_pages",
-#endif /* OPLUS_FEATURE_HEALTHINFO */
+#if defined(OPLUS_FEATURE_HEALTHINFO) && defined(CONFIG_OPLUS_HEALTHINFO)
+        "nr_ioncache_pages",
+#endif /*OPLUS_FEATURE_HEALTHINFO*/
 	/* enum numa_stat_item counters */
 #ifdef CONFIG_NUMA
 	"numa_hit",
@@ -1339,6 +1339,7 @@ static void pagetypeinfo_showfree_print(struct seq_file *m,
 					pg_data_t *pgdat, struct zone *zone)
 {
 	int order, mtype;
+
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
     int flc;
 
@@ -2008,11 +2009,11 @@ void __init init_mm_internals(void)
 	proc_create("vmstat", 0444, NULL, &vmstat_file_operations);
 	proc_create("zoneinfo", 0444, NULL, &zoneinfo_file_operations);
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
-    pentry = proc_create("free_area_list_show", S_IRWXUGO, NULL, &proc_free_area_fops);
-    if (!pentry) {
+	pentry = proc_create("free_area_list_show", S_IRWXUGO, NULL, &proc_free_area_fops);
+	if (!pentry) {
 		pr_err("vmstat: failed to create '/proc/free_area_list_show'\n");
-        return;
-    }
+		return;
+	}
 #endif
 #endif
 }

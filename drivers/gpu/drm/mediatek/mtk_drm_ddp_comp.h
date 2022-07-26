@@ -255,6 +255,8 @@ enum mtk_ddp_io_cmd {
 	DC_BACKLIGHT,
 	LCM_SEED,
 	PANEL_SN_SET,
+	DC_POST_EXIT,
+	DISP_OFF,
 	//#endif
 };
 
@@ -527,6 +529,7 @@ int mtk_ddp_comp_register(struct drm_device *drm, struct mtk_ddp_comp *comp);
 void mtk_ddp_comp_unregister(struct drm_device *drm, struct mtk_ddp_comp *comp);
 int mtk_ddp_comp_get_type(enum mtk_ddp_comp_id comp_id);
 bool mtk_dsi_is_cmd_mode(struct mtk_ddp_comp *comp);
+int mtk_dsi_get_clk_refcnt(struct mtk_ddp_comp *comp);
 bool mtk_ddp_comp_is_output(struct mtk_ddp_comp *comp);
 void mtk_ddp_comp_get_name(struct mtk_ddp_comp *comp, char *buf, int buf_len);
 int mtk_ovl_layer_num(struct mtk_ddp_comp *comp);
@@ -551,7 +554,11 @@ void mt6873_mtk_sodi_config(struct drm_device *drm, enum mtk_ddp_comp_id id,
 			    struct cmdq_pkt *handle, void *data);
 void mt6853_mtk_sodi_config(struct drm_device *drm, enum mtk_ddp_comp_id id,
 			    struct cmdq_pkt *handle, void *data);
+void mt6877_mtk_sodi_config(struct drm_device *drm, enum mtk_ddp_comp_id id,
+			    struct cmdq_pkt *handle, void *data);
 void mt6833_mtk_sodi_config(struct drm_device *drm, enum mtk_ddp_comp_id id,
+			    struct cmdq_pkt *handle, void *data);
+void mt6781_mtk_sodi_config(struct drm_device *drm, enum mtk_ddp_comp_id id,
 			    struct cmdq_pkt *handle, void *data);
 
 

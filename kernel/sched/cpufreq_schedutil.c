@@ -26,8 +26,12 @@
 extern int sysctl_slide_boost_enabled;
 extern int sysctl_sched_assist_enabled;
 extern u64 ux_task_load[];
-#endif
-#define IOWAIT_BOOST_MIN	(SCHED_CAPACITY_SCALE / 8)
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+#include <linux/task_sched_info.h>
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
+
 static struct cpufreq_governor schedutil_gov;
 unsigned long boosted_cpu_util(int cpu);
 
@@ -99,10 +103,7 @@ struct sugov_cpu {
 	unsigned long util;
 	unsigned long max;
 	unsigned int flags;
-	/* The field below is for single-CPU policies only. */
-#ifdef CONFIG_NO_HZ_COMMON
-	unsigned long saved_idle_calls;
-#endif
+	unsigned long min_boost;
 };
 
 static DEFINE_PER_CPU(struct sugov_cpu, sugov_cpu);
@@ -160,7 +161,7 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 	if (sg_policy->flags & SCHED_CPUFREQ_BOOST)
 		return true;
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	delta_ns = time - sg_policy->last_freq_update_time;
 	return delta_ns >= sg_policy->min_rate_limit_ns;
 }
@@ -174,8 +175,7 @@ static bool sugov_up_down_rate_limit(struct sugov_policy *sg_policy, u64 time,
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 	if (sg_policy->flags & SCHED_CPUFREQ_BOOST)
 		return false;
-#endif
-
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	if (next_freq > sg_policy->next_freq &&
 	    delta_ns < sg_policy->up_rate_delay_ns)
 			return true;
@@ -208,6 +208,9 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 #ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
 	mt_cpufreq_set_by_wfi_load_cluster(cid, next_freq);
 	policy->cur = next_freq;
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	update_freq_info(policy);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 	trace_sched_util(cid, next_freq, time);
 #else
 	if (policy->fast_switch_enabled) {
@@ -216,6 +219,9 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 			return;
 
 		policy->cur = next_freq;
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+		update_freq_info(policy);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 		trace_cpu_frequency(next_freq, smp_processor_id());
 	} else {
 		sg_policy->work_in_progress = true;
@@ -464,10 +470,11 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu)
 		if (idle_cpu(cpu))
 			*util = 0;
 	}
-#else
+#else /* OPLUS_FEATURE_SCHED_ASSIST */
 	if (idle_cpu(cpu))
 		*util = 0;
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
 	*util = min(*util, max_cap);
 	*max = max_cap;
 }
@@ -501,9 +508,8 @@ static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
 			if (sg_cpu->iowait_boost > max_boost)
 				sg_cpu->iowait_boost = max_boost;
 		} else {
-			sg_cpu->iowait_boost = IOWAIT_BOOST_MIN;
+			sg_cpu->iowait_boost = sg_cpu->min_boost;
 		}
-		trace_cpu_iowait_util(sg_cpu->cpu, sg_cpu->iowait_boost);
 	} else if (sg_cpu->iowait_boost) {
 		s64 delta_ns = time - sg_cpu->last_update;
 
@@ -513,7 +519,6 @@ static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
 			sg_cpu->iowait_boost_pending = false;
 		}
 	}
-
 }
 
 static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
@@ -528,7 +533,7 @@ static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
 		sg_cpu->iowait_boost_pending = false;
 	} else {
 		sg_cpu->iowait_boost >>= 1;
-		if (sg_cpu->iowait_boost < IOWAIT_BOOST_MIN) {
+		if (sg_cpu->iowait_boost < sg_cpu->min_boost) {
 			sg_cpu->iowait_boost = 0;
 			return;
 		}
@@ -542,19 +547,6 @@ static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
 		*max = boost_max;
 	}
 }
-
-#ifdef CONFIG_NO_HZ_COMMON
-static bool sugov_cpu_is_busy(struct sugov_cpu *sg_cpu)
-{
-	unsigned long idle_calls = tick_nohz_get_idle_calls_cpu(sg_cpu->cpu);
-	bool ret = idle_calls == sg_cpu->saved_idle_calls;
-
-	sg_cpu->saved_idle_calls = idle_calls;
-	return ret;
-}
-#else
-static inline bool sugov_cpu_is_busy(struct sugov_cpu *sg_cpu) { return false; }
-#endif /* CONFIG_NO_HZ_COMMON */
 
 static void sugov_update_single(struct update_util_data *hook, u64 time,
 				unsigned int flags)
@@ -578,10 +570,6 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 		next_f = policy->cpuinfo.max_freq;
 	} else {
 		sugov_get_util(&util, &max, sg_cpu->cpu);
-#ifdef CONFIG_UCLAMP_TASK
-		trace_schedutil_uclamp_util(sg_cpu->cpu, util);
-#endif
-
 		util = uclamp_util(cpu_rq(sg_cpu->cpu), util);
 		sugov_iowait_boost(sg_cpu, &util, &max);
 		next_f = get_next_freq(sg_policy, util, max);
@@ -672,7 +660,8 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 	sg_cpu->flags = flags;
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 	sg_policy->flags = flags;
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
 	sugov_set_iowait_boost(sg_cpu, time, flags);
 	sg_cpu->last_update = time;
 
@@ -1283,7 +1272,7 @@ static int sugov_start(struct cpufreq_policy *policy)
 	sg_policy->cached_raw_freq = 0;
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_SCHED_WALT)
 	sg_policy->flags	= 0;
-#endif
+#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	for_each_cpu(cpu, policy->cpus) {
 		struct sugov_cpu *sg_cpu = &per_cpu(sugov_cpu, cpu);
 
@@ -1292,6 +1281,9 @@ static int sugov_start(struct cpufreq_policy *policy)
 		sg_cpu->sg_policy = sg_policy;
 		sg_cpu->flags = SCHED_CPUFREQ_DL;
 		sg_cpu->iowait_boost_max = capacity_orig_of(cpu);
+		sg_cpu->min_boost =
+			(SCHED_CAPACITY_SCALE * policy->cpuinfo.min_freq) /
+			policy->cpuinfo.max_freq;
 	}
 
 	for_each_cpu(cpu, policy->cpus) {

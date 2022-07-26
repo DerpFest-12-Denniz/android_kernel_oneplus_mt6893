@@ -135,7 +135,6 @@ static inline unsigned long kmem_cache_flags(unsigned long object_size,
 #define SLAB_DEBUG_FLAGS (SLAB_RED_ZONE | SLAB_POISON | SLAB_STORE_USER | \
 			  SLAB_TRACE | SLAB_CONSISTENCY_CHECKS)
 #elif defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_KMALLOC_DEBUG)
-/* create kmalloc cache with sotre user. */
 #define SLAB_DEBUG_FLAGS (SLAB_STORE_USER)
 #else
 #define SLAB_DEBUG_FLAGS (0)

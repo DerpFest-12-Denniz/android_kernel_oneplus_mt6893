@@ -479,7 +479,6 @@ extern void get_worker_info(struct task_struct *task, char *buf);
 #else
 static inline void get_worker_info(struct task_struct *task, char *buf) { }
 #endif
-
 /**
  * queue_work - queue work on a workqueue
  * @wq: workqueue to use

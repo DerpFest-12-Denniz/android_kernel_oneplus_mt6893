@@ -11,7 +11,8 @@
 # GNU General Public License for more details.
 #
 subdir-ccflags-y += -I$(srctree)/drivers/i2c/busses/ \
-             -I$(srctree)/drivers/misc/mediatek/ccu/inc
+             -I$(srctree)/drivers/misc/mediatek/ccu/inc \
+             -I$(srctree)/include
 
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 ARCH_MTK_PROJECT := $(subst ",,$(CONFIG_ARCH_MTK_PROJECT))
@@ -19,7 +20,11 @@ ARCH_MTK_PROJECT := $(subst ",,$(CONFIG_ARCH_MTK_PROJECT))
 MTK_PLATFORM_PATH_ROOT := $(srctree)/drivers/misc/mediatek/mach/$(MTK_PLATFORM)
 MTK_PROJECT_PATH_ROOT := $(srctree)/drivers/misc/mediatek/mach/$(MTK_PLATFORM)/$(ARCH_MTK_PROJECT)
 
+ifeq ($(CONFIG_MACH_MT6781),y)
+CONFIG_MTK_PLATFORM_SENSOR := mt6781
+else
 CONFIG_MTK_PLATFORM_SENSOR := $(CONFIG_MTK_PLATFORM)
+endif
 
 subdir-ccflags-y += -I$(MTK_PROJECT_PATH_ROOT)/camera/camera
 

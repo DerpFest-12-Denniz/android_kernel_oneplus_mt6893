@@ -30,7 +30,7 @@ int oplus_display_panel_set_finger_print(void *buf)
 }
 
 int notify_display_fpd(bool mode) {
-	pr_debug("[lh]lcm mode = %d\n", mode);
+	pr_debug("lcm mode = %d\n", mode);
 	oplus_doze_fpd_nodelay = mode;
 	return 0;
 }

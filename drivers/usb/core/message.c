@@ -573,7 +573,7 @@ void usb_sg_wait(struct usb_sg_request *io)
 		dev_warn(&io->dev->dev,"%s urb timeout\n", __func__);
 		usb_sg_cancel(io);
 	}
-#else /*OPLUS_FEATURE_CHG_BASIC*/
+#else
 	wait_for_completion(&io->complete);
 #endif /*OPLUS_FEATURE_CHG_BASIC*/
 

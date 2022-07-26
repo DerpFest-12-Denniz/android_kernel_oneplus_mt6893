@@ -91,12 +91,17 @@
 #define ESE_CLD_RST_OID      0x1E
 #define ESE_CLD_RST_RSP_SIZE 0x04
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :when phone is in sleep,wakeup AP
 #define WAKEUP_SRC_TIMEOUT    (2000)
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :control warnning print
 #define DEBUG_GPIO_SWITCH 1
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for : NFC_BAT_SCL(GPIO40) Electric leakage
 #define MAX_RETRY_COUNT         3
 #define NCI_RESET_CMD_LEN       4
@@ -105,19 +110,24 @@
 #define NCI_INIT_RSP_LEN        28
 #define NCI_GET_FW_CMD_LEN      8
 #define NCI_GET_FW_RSP_LEN      14
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Rewmove for : remove VEN_ALWAYS_ON
 /* VEN is kept ON all the time if you define the macro VEN_ALWAYS_ON.
 Used for SN100 usecases */
 //#define VEN_ALWAYS_ON
 /* Macro added to disable SVDD power toggling */
 /* #define JCOP_4X_VALIDATION */
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
 struct pn544_dev    {
     wait_queue_head_t   read_wq;
     struct mutex        read_mutex;
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for: Add mutex to prevent re-init of dwp_onoff_sema
     struct mutex        dwp_mutex;
+    //#endif /*OPLUS_FEATURE_NFC_BRING_UP */
     struct i2c_client   *client;
     struct miscdevice   pn544_device;
     unsigned int        ven_gpio;
@@ -132,6 +142,7 @@ struct pn544_dev    {
     p61_access_state_t  p61_current_state; /* stores the current P61 state */
     bool                nfc_ven_enabled; /* stores the VEN pin state powered by Nfc */
     bool                spi_ven_enabled; /* stores the VEN pin state powered by Spi */
+    //#ifndef OPLUS_FEATURE_NFC_BRING_UP
     //Modify for :when phone is in sleep,wakeup AP
     //bool              irq_enabled;
     //#else
@@ -139,6 +150,7 @@ struct pn544_dev    {
     /* NFC_IRQ wake-up state */
     unsigned int        count_irq;
     bool                irq_wake_up;
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     spinlock_t          irq_enabled_lock;
     long                nfc_service_pid; /*used to signal the nfc the nfc service */
     chip_pwr_scheme_t   chip_pwr_scheme;
@@ -183,6 +195,7 @@ static void check_hw_info(void);
 #endif
 #define SECURE_TIMER_WORK_QUEUE "SecTimerCbWq"
 
+//#ifndef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :when phone is in sleep,wakeup AP
 static void pn544_enable_irq(struct pn544_dev *pn544_dev) {
     unsigned long flags;
@@ -194,6 +207,7 @@ static void pn544_enable_irq(struct pn544_dev *pn544_dev) {
     }
     spin_unlock_irqrestore(&pn544_dev->irq_enabled_lock, flags);
 }
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
 static void pn544_disable_irq(struct pn544_dev *pn544_dev)
 {
@@ -202,8 +216,10 @@ static void pn544_disable_irq(struct pn544_dev *pn544_dev)
     spin_lock_irqsave(&pn544_dev->irq_enabled_lock, flags);
     if (pn544_dev->irq_enabled) {
         disable_irq_nosync(pn544_dev->client->irq);
+        //#ifndef OPLUS_FEATURE_NFC_BRING_UP
         //Remove for :when phone is in sleep,wakeup AP
         //disable_irq_wake(pn544_dev->client->irq);
+        //#endif /* OPLUS_FEATURE_NFC_BRING_UP*/
         pn544_dev->irq_enabled = false;
     }
     spin_unlock_irqrestore(&pn544_dev->irq_enabled_lock, flags);
@@ -220,18 +236,22 @@ static irqreturn_t pn544_dev_irq_handler(int irq, void *dev_id)
 {
     struct pn544_dev *pn544_dev = dev_id;
 
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :when phone is in sleep,wakeup AP
     unsigned long flags;
     if (device_may_wakeup(&pn544_dev->client->dev))
     {
         pm_wakeup_event(&pn544_dev->client->dev, WAKEUP_SRC_TIMEOUT);
     }
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     pn544_disable_irq(pn544_dev);
 
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :when phone is in sleep,wakeup AP
     spin_lock_irqsave(&pn544_dev->irq_enabled_lock, flags);
     pn544_dev->count_irq++;
     spin_unlock_irqrestore(&pn544_dev->irq_enabled_lock, flags);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP*/
     /* HiKey Compilation fix */
     #ifndef HiKey_620_COMPILATION_FIX
     if (sIsWakeLocked == false)
@@ -244,8 +264,10 @@ static irqreturn_t pn544_dev_irq_handler(int irq, void *dev_id)
     #endif
     /* Wake up waiting readers */
     wake_up(&pn544_dev->read_wq);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :when phone is in sleep,wakeup AP
     printk("%s : IRQ trigger!\n", __func__);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
     return IRQ_HANDLED;
 }
@@ -291,18 +313,22 @@ static ssize_t pn544_dev_read(struct file *filp, char __user *buf,
         }
 
         while (1) {
+            //#ifndef OPLUS_FEATURE_NFC_BRING_UP
             //Modify for :when phone is in sleep,wakeup AP
             //pn544_dev->irq_enabled = true;
             //enable_irq(pn544_dev->client->irq);
             //enable_irq_wake(pn544_dev->client->irq);
             //#else
             pn544_enable_irq(pn544_dev);
+            //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
             ret = wait_event_interruptible(
                     pn544_dev->read_wq,
                     !pn544_dev->irq_enabled);
 
+            //#ifndef OPLUS_FEATURE_NFC_BRING_UP
             //Remove for :when phone is in sleep,wakeup AP
             //pn544_disable_irq(pn544_dev);
+            //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
             if (ret)
                 goto fail;
@@ -313,8 +339,10 @@ static ssize_t pn544_dev_read(struct file *filp, char __user *buf,
                 goto fail;
             }
 
+            //#ifndef OPLUS_FEATURE_NFC_BRING_UP
             //Add for :when phone is in sleep,wakeup AP
             pn544_disable_irq(pn544_dev);
+            //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
             if (gpio_get_value(pn544_dev->irq_gpio))
                 break;
@@ -587,11 +615,13 @@ static int release_dwpOnOff_wait(void)
     return 0;
 }
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :when phone is in sleep,wakeup AP
 static void pn544_init_stat(struct pn544_dev *pn544_dev)
 {
     pn544_dev->count_irq = 0;
 }
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 static int pn544_dev_open(struct inode *inode, struct file *filp)
 {
     struct pn544_dev *pn544_dev = container_of(filp->private_data,
@@ -599,8 +629,10 @@ static int pn544_dev_open(struct inode *inode, struct file *filp)
             pn544_device);
 
     filp->private_data = pn544_dev;
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :when phone is in sleep,wakeup AP
     pn544_init_stat(pn544_dev);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     pn544_dev->state_flags |= (P544_FLAG_NFC_ON);
     pr_debug("%s : %d,%d\n", __func__, imajor(inode), iminor(inode));
 
@@ -781,6 +813,7 @@ long  pn544_dev_ioctl(struct file *filp, unsigned int cmd,
                     if(pn544_dev->nfc_service_pid){
                         pr_info("nfc service pid %s   ---- %ld", __func__, pn544_dev->nfc_service_pid);
                         /*signal_handler(P61_STATE_SPI, pn544_dev->nfc_service_pid);*/
+                        //#ifndef OPLUS_FEATURE_NFC_BRING_UP
                         //Modify for: Add mutex to prevent re-init of dwp_onoff_sema
                         /*
                         dwp_OnOff(pn544_dev->nfc_service_pid, P61_STATE_SPI);
@@ -789,6 +822,7 @@ long  pn544_dev_ioctl(struct file *filp, unsigned int cmd,
                         mutex_lock(&pn544_dev->dwp_mutex);
                         dwp_OnOff(pn544_dev->nfc_service_pid, P61_STATE_SPI);
                         mutex_unlock(&pn544_dev->dwp_mutex);
+                        //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
                     }
                     else{
                         pr_info(" invalid nfc service pid....signalling failed%s   ---- %ld", __func__, pn544_dev->nfc_service_pid);
@@ -1415,19 +1449,21 @@ static int pn544_parse_dt(struct device *dev,
         data->irq_gpio = of_get_named_gpio_flags(np,
                                         "nxp,gpio_irq", 0, NULL);
 #endif
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :control warnning print
     #if DEBUG_GPIO_SWITCH
     pr_info("%s:%d  irq:%d, ven:%d, firm:%d, %d, %d error:%d\n", __func__, __LINE__,
         data->irq_gpio, data->ven_gpio, data->firm_gpio, data->iso_rst_gpio,
         data->ese_pwr_gpio, errorno);
     #endif
-    //#endif VENDOR_EDI
+    //#endif OPLUS_FEATURE_NFC_BRING_UP
 
     return errorno;
 }
 #endif
 
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for : NFC_BAT_SCL(GPIO40) Electric leakage
 /**
  * nqx_standby_write()
@@ -1462,6 +1498,107 @@ static int nqx_standby_write(struct pn544_dev *nqx_dev,
 static int nfcc_hw_check(struct i2c_client *client, struct pn544_dev *nqx_dev)
 {
     int ret = 0;
+#if 0
+    //Modify for : send get firmware version
+    int gpio_retry_count = 0;
+    unsigned int enable_gpio = nqx_dev->ven_gpio;
+    char *nci_reset_cmd = NULL;
+    char *nci_init_cmd = NULL;
+    char *nci_init_rsp = NULL;
+    char *nci_reset_rsp = NULL;
+
+    pr_info("%s:%d Enter", __func__, __LINE__);
+    nci_reset_cmd = kzalloc(NCI_RESET_CMD_LEN + 1, GFP_DMA | GFP_KERNEL);
+    if (!nci_reset_cmd) {
+        ret = -ENOMEM;
+        goto done;
+    }
+
+    pr_info("%s:%d Enter", __func__, __LINE__);
+    nci_reset_rsp = kzalloc(NCI_RESET_RSP_LEN + 1,  GFP_DMA | GFP_KERNEL);
+    if (!nci_reset_rsp) {
+        ret = -ENOMEM;
+        goto done;
+    }
+
+    nci_init_cmd = kzalloc(NCI_INIT_CMD_LEN + 1,  GFP_DMA | GFP_KERNEL);
+    if (!nci_init_cmd) {
+        ret = -ENOMEM;
+        goto done;
+    }
+
+    nci_init_rsp = kzalloc(NCI_INIT_RSP_LEN + 1,  GFP_DMA | GFP_KERNEL);
+    if (!nci_init_rsp) {
+        ret = -ENOMEM;
+        goto done;
+    }
+
+reset_enable_gpio:
+    /* making sure that the NFCC starts in a clean state. */
+    gpio_set_value(enable_gpio, 0);/* ULPM: Disable */
+    /* hardware dependent delay */
+    usleep_range(10000, 10100);
+    gpio_set_value(enable_gpio, 1);/* HPD : Enable*/
+    /* hardware dependent delay */
+    usleep_range(10000, 10100);
+
+    nci_reset_cmd[0] = 0x20;
+    nci_reset_cmd[1] = 0x00;
+    nci_reset_cmd[2] = 0x01;
+    nci_reset_cmd[3] = 0x00;
+    /* send NCI CORE RESET CMD with Keep Config parameters */
+    pr_info("%s:%d Enter", __func__, __LINE__);
+    ret = i2c_master_send(client, nci_reset_cmd, NCI_RESET_CMD_LEN);
+    if (ret < 0) {
+        pr_err("%s: - i2c_master_send core reset Error\n", __func__);
+    }
+    /* hardware dependent delay */
+    msleep(30);
+
+    pr_info("%s:%d Enter", __func__, __LINE__);
+    /* Read Response of RESET command */
+    ret = i2c_master_recv(client, nci_reset_rsp, NCI_RESET_RSP_LEN);
+    if (ret < 0) {
+        pr_err("%s: - i2c_master_recv Error\n", __func__);
+        gpio_retry_count = gpio_retry_count + 1;
+        if (gpio_retry_count < MAX_RETRY_COUNT)
+            goto reset_enable_gpio;
+        goto err_nfcc_hw_check;
+    }
+    nci_init_cmd[0] = 0x20;
+    nci_init_cmd[1] = 0x01;
+    nci_init_cmd[2] = 0x00;
+
+    pr_info("%s:%d Enter", __func__, __LINE__);
+    ret = nqx_standby_write(nqx_dev, nci_init_cmd, NCI_INIT_CMD_LEN);
+    if (ret < 0) {
+        pr_err("%s: - i2c_master_send failed for Core INIT\n", __func__);
+        goto err_nfcc_core_init_fail;
+    }
+    /* hardware dependent delay */
+    msleep(30);
+    /* Read Response of INIT command */
+    ret = i2c_master_recv(client, nci_init_rsp, NCI_INIT_RSP_LEN);
+    if (ret < 0) {
+        pr_err("%s: - i2c_master_recv Error\n", __func__);
+        goto err_nfcc_core_init_fail;
+    }
+    gpio_set_value(enable_gpio, 0);
+    goto done;
+
+err_nfcc_core_init_fail:
+    pr_err("%s: err_nfcc_core_init_fail\n",__func__);
+
+err_nfcc_hw_check:
+    ret = -ENXIO;
+    pr_err("%s: - NFCC HW not available\n", __func__);
+
+done:
+    kfree(nci_reset_rsp);
+    kfree(nci_init_rsp);
+    kfree(nci_init_cmd);
+    kfree(nci_reset_cmd);
+#else
     unsigned int enable_gpio = nqx_dev->ven_gpio;
     unsigned int firm_gpio = nqx_dev->firm_gpio;
     char *nci_get_fw_cmd = NULL;
@@ -1534,9 +1671,11 @@ err_nfcc_hw_check:
 done:
     kfree(nci_get_fw_rsp);
     kfree(nci_get_fw_cmd);
+#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
     return ret;
 }
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 
 static int pn544_probe(struct i2c_client *client,
         const struct i2c_device_id *id)
@@ -1677,8 +1816,10 @@ static int pn544_probe(struct i2c_client *client,
     /* init mutex and queues */
     init_waitqueue_head(&pn544_dev->read_wq);
     mutex_init(&pn544_dev->read_mutex);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for: Add mutex to prevent re-init of dwp_onoff_sema
     mutex_init(&pn544_dev->dwp_mutex);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     sema_init(&ese_access_sema, 1);
     mutex_init(&pn544_dev->p61_state_mutex);
     spin_lock_init(&pn544_dev->irq_enabled_lock);
@@ -1704,10 +1845,12 @@ static int pn544_probe(struct i2c_client *client,
     /* request irq.  the irq is set whenever the chip has data available
      * for reading.  it is cleared when all data has been read.
      */
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for :control warnning print
     #if DEBUG_GPIO_SWITCH
     pr_info("%s : requesting IRQ %d\n", __func__, client->irq);
     #endif
+    //#endif OPLUS_FEATURE_NFC_BRING_UP
     pn544_dev->irq_enabled = true;
     pr_info("%s:%d debugxxx", __func__, __LINE__);
     ret = request_irq(client->irq, pn544_dev_irq_handler,
@@ -1720,6 +1863,7 @@ static int pn544_probe(struct i2c_client *client,
     //enable_irq_wake(pn544_dev->client->irq);
 //#endif /*//#ifdef OPLUS_FEATURE_NFC_DRIVE*/
     pr_info("%s:%d debugxxx", __func__, __LINE__);
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :when phone is in sleep,wakeup AP
     device_init_wakeup(&client->dev, true);
     device_set_wakeup_capable(&client->dev, true);
@@ -1727,8 +1871,10 @@ static int pn544_probe(struct i2c_client *client,
     pn544_dev->irq_wake_up = false;
 //#endif /*//#ifdef OPLUS_FEATURE_NFC_DRIVE*/
 
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     pn544_disable_irq(pn544_dev);
     i2c_set_clientdata(client, pn544_dev);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for : NFC_BAT_SCL(GPIO40) Electric leakage
     /*
      * To be efficient we need to test whether nfcc hardware is physically
@@ -1743,9 +1889,12 @@ static int pn544_probe(struct i2c_client *client,
         gpio_set_value(pn544_dev->firm_gpio, 0);
         gpio_set_value(pn544_dev->ven_gpio, 0);
         /* We don't think there is hardware switch NFC OFF */
+        //#ifdef OPLUS_FEATURE_NFC_BRING_UP
         //Del for : do not del the nfc node if nfcc_hw_check fail
         //goto err_request_irq_failed;
+        //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     }
+    //#endif /*OPLUS_FEATURE_NFC_BRING_UP */
 #ifdef VEN_ALWAYS_ON
     msleep(5); /* VBAT--> VDDIO(HIGH) + Guardtime of min 5ms --> VEN(HIGH) */
     /* VEN toggle(reset) to proceed */
@@ -1768,11 +1917,15 @@ static int pn544_probe(struct i2c_client *client,
     misc_deregister(&pn544_dev->pn544_device);
     err_misc_register:
     mutex_destroy(&pn544_dev->read_mutex);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for: Add mutex to prevent re-init of dwp_onoff_sema
     mutex_destroy(&pn544_dev->dwp_mutex);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     mutex_destroy(&pn544_dev->p61_state_mutex);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Remove for: Coverity check 81487, do not kfree(pn544_dev) here, free it before return
     //kfree(pn544_dev);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     err_exit:
     if (pn544_dev->firm_gpio)
         gpio_free(platform_data->firm_gpio);
@@ -1786,8 +1939,10 @@ static int pn544_probe(struct i2c_client *client,
     err_iso_rst:
     gpio_free(platform_data->iso_rst_gpio);
 #endif
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Remove for: Coverity check 81487, do not kfree(pn544_dev) here, free it before return
     kfree(pn544_dev);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     return ret;
 }
 
@@ -1800,8 +1955,10 @@ static int pn544_remove(struct i2c_client *client)
     misc_deregister(&pn544_dev->pn544_device);
     mutex_destroy(&pn544_dev->read_mutex);
     mutex_destroy(&pn544_dev->p61_state_mutex);
+    //#ifdef OPLUS_FEATURE_NFC_BRING_UP
     //Add for: Add mutex to prevent re-init of dwp_onoff_sema
     mutex_destroy(&pn544_dev->dwp_mutex);
+    //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
     gpio_free(pn544_dev->irq_gpio);
     gpio_free(pn544_dev->ven_gpio);
     gpio_free(pn544_dev->ese_pwr_gpio);
@@ -1820,6 +1977,7 @@ static int pn544_remove(struct i2c_client *client)
     return 0;
 }
 
+//#ifdef OPLUS_FEATURE_NFC_BRING_UP
 //Add for :when phone is in sleep,wakeup AP
 static int pn544_suspend(struct device *device)
 {
@@ -1850,6 +2008,7 @@ static int pn544_resume(struct device *device)
 static const struct dev_pm_ops nfc_pm_ops = {
     SET_SYSTEM_SLEEP_PM_OPS(pn544_suspend, pn544_resume)
 };
+//#endif /* OPLUS_FEATURE_NFC_BRING_UP */
 static const struct i2c_device_id pn544_id[] = {
 #if NEXUS5x
         { "pn548", 0 },
@@ -1884,8 +2043,10 @@ static struct i2c_driver pn544_driver = {
 #if DRAGON_NFC
                 .of_match_table = pn544_i2c_dt_match,
 #endif
+                //#ifdef OPLUS_FEATURE_NFC_BRING_UP
                 //Add for :when phone is in sleep,wakeup AP
                 .pm = &nfc_pm_ops,
+                //#endif /* OPLUS_FEATURE_NFC_BRING_UP */
         },
 };
 #if HWINFO
@@ -1968,8 +2129,10 @@ static void check_hw_info() {
              * */
             pn544_dev->irq_enabled = true;
             enable_irq(pn544_dev->client->irq);
+            //#ifndef OPLUS_FEATURE_NFC_BRING_UP
             //Remove for :when phone is in sleep,wakeup AP
             //enable_irq_wake(pn544_dev->client->irq);
+            //endif OPLUS_FEATURE_NFC_BRING_UP
             ret = wait_event_interruptible(
                     pn544_dev->read_wq,
                     !pn544_dev->irq_enabled);
