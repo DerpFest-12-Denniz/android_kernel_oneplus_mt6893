@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 MediaTek Inc.
+ * Copyright (C) 2019 MediaTek Inc.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -60,8 +60,6 @@ void random_delay(struct ufs_hba *hba)
 }
 void wdt_pmic_full_reset(struct ufs_hba *hba)
 {
-	ufshcd_disable_intr(hba, hba->intr_mask);
-
 	/* power off device VCC */
 	pmic_set_register_value_nolock(PMIC_RG_LDO_VEMC_EN, 0);
 
@@ -75,7 +73,8 @@ void wdt_pmic_full_reset(struct ufs_hba *hba)
 	 *
 	 * Press power key or plug in USB to power up again.
 	 */
-	pmic_set_register_value_nolock(PMIC_RG_LDO_VIO18_EN, 0);
+	/* mark the code since we do not use EXT LDO for VCCQ 1.2V */
+	/* pmic_set_register_value_nolock(PMIC_RG_LDO_VIO18_EN, 0); */
 
 	/* PMIC cold reset */
 	pmic_set_register_value_nolock(PMIC_RG_CRST, 1);
@@ -89,7 +88,7 @@ void ufs_mtk_pltfrm_gpio_trigger_and_debugInfo_dump(struct ufs_hba *hba)
 #ifdef UPMU_READY
 	int vcc_enabled, vcc_0_value, vcc_1_value;
 	int vccq2_enabled, va12_enabled;
-	u32 val_0, val_1;
+	u32 val_0, val_1, ufs_mon;
 
 	/* check ufs debug register */
 	ufshcd_writel(hba, 0x20, REG_UFS_MTK_DEBUG_SEL);
@@ -102,11 +101,13 @@ void ufs_mtk_pltfrm_gpio_trigger_and_debugInfo_dump(struct ufs_hba *hba)
 	vcc_1_value = pmic_get_register_value(PMIC_RG_VEMC_VOSEL_1);
 	vccq2_enabled = pmic_get_register_value(PMIC_DA_EXT_PMIC_EN1);
 	va12_enabled = pmic_get_register_value(PMIC_RG_LDO_VA12_EN);
+	ufs_mon = upmu_get_reg_value(MT6359_LDO_VUFS_MON);
+
 	/* dump vcc, vccq2 info */
 	dev_info(hba->dev,
-		"vcc_en:%d, vcc_0:%d, vcc_1:%d, vccq2_en:%d, va12_en:%d\n",
+		"vcc_en:%d, vcc_0:%d, vcc_1:%d, vccq2_en:%d, va12_en:%d ufs_mon:0x%x\n",
 		vcc_enabled, vcc_0_value, vcc_1_value,
-		vccq2_enabled, va12_enabled);
+		vccq2_enabled, va12_enabled, ufs_mon);
 
 	if (ufs_mtk_mmio_base_infracfg_ao) {
 		val_0 = readl(ufs_mtk_mmio_base_infracfg_ao + CLK_CG_2_STA);
@@ -114,6 +115,19 @@ void ufs_mtk_pltfrm_gpio_trigger_and_debugInfo_dump(struct ufs_hba *hba)
 		dev_info(hba->dev,
 			"infracfg_ao: CLK_CG_2_STA = 0x%x, CLK_CG_3_STA = 0x%x\n",
 			val_0, val_1);
+		dev_info(hba->dev,
+			"UNIPRO_SYSCLK_CG(%d) UNIPRO_TICK_CG(%d) UFS_MP_SAP_BCLK_CG(%d)\n",
+			!!(val_0 & INFRACFG_AO_UNIPRO_SYSCLK_CG),
+			!!(val_0 & INFRACFG_AO_UNIPRO_TICK_CG),
+			!!(val_0 & INFRACFG_AO_UFS_MP_SAP_BCLK_CG));
+		dev_info(hba->dev,
+			"UFS_CG(%d) AES_UFSFDE_CG(%d) UFS_TICK_CG(%d)\n",
+			!!(val_0 & INFRACFG_AO_UFS_CG),
+			!!(val_0 & INFRACFG_AO_AES_UFSFDE_CG),
+			!!(val_0 & INFRACFG_AO_UFS_TICK_CG));
+		dev_info(hba->dev,
+			"UFS_AXI_CG(%d)\n",
+			!!(val_1 & INFRACFG_AO_UFS_AXI_CG));
 	}
 
 	if (ufs_mtk_mmio_base_apmixed) {
@@ -138,12 +152,13 @@ struct device_node *msdc_gpio_node;
 void __iomem *msdc_gpio_base;
 static struct regulator *vmc;
 
-#define MSDC1_GPIO_MODE           (msdc_gpio_base + 0x360)
-#define MSDC1_GPIO_DIR             (msdc_gpio_base + 0x10)
-#define MSDC1_GPIO_DOUT            (msdc_gpio_base + 0x110)
+#define MSDC1_GPIO_MODE17           (msdc_gpio_base + 0x410)
+#define MSDC1_GPIO_DIR4             (msdc_gpio_base + 0x40)
+#define MSDC1_GPIO_DOUT4            (msdc_gpio_base + 0x140)
 
-#define MSDC1_GPIO_DOUT_DIR_FIELD   (0x01F00000)
-#define MSDC1_GPIO_DOUT_DIR_VAL_SET (0x0000001F)
+#define MSDC1_GPIO_DOUT             (MSDC1_GPIO_DOUT4)
+#define MSDC1_GPIO_DOUT_DIR_FIELD   (0x00000F00)
+#define MSDC1_GPIO_DOUT_DIR_VAL_SET (0x0000000F)
 #define MSDC1_GPIO_DOUT_DIR_VAL_CLR (0x00000000)
 
 #define MSDC_READ32(reg)          __raw_readl(reg)
@@ -216,13 +231,12 @@ void ufs_mtk_pltfrm_gpio_trigger_init(struct ufs_hba *hba)
 	 * Be sure remove msdc_set_pin_mode in msdc_cust.c set mode
 	 * back to msdc.
 	 */
-	MSDC_SET_FIELD(MSDC1_GPIO_MODE, 0xFFFF0000, 0x0);
-	MSDC_SET_FIELD(MSDC1_GPIO_MODE + 0x10, 0x0000000F, 0x0);
+	MSDC_SET_FIELD(MSDC1_GPIO_MODE17, 0x0000FFFF, 0x0);
 
 	/*
 	 * Set gpio dir output. (dat0/dat1/dat2/dat3 in GPIO)
 	 */
-	MSDC_SET_FIELD(MSDC1_GPIO_DIR,
+	MSDC_SET_FIELD(MSDC1_GPIO_DIR4,
 		MSDC1_GPIO_DOUT_DIR_FIELD,
 		MSDC1_GPIO_DOUT_DIR_VAL_SET);
 
@@ -260,8 +274,8 @@ void ufs_mtk_pltfrm_gpio_trigger(int value)
 	pr_info("%s vmc=%d uv\n", __func__, regulator_get_voltage(vmc));
 
 	pr_info("%s mode=0x%x, dir=0x%x, out=0x%x\n", __func__,
-		MSDC_READ32(MSDC1_GPIO_MODE),
-		MSDC_READ32(MSDC1_GPIO_DIR),
+		MSDC_READ32(MSDC1_GPIO_MODE17),
+		MSDC_READ32(MSDC1_GPIO_DIR4),
 		MSDC_READ32(MSDC1_GPIO_DOUT));
 }
 #endif
@@ -337,7 +351,7 @@ int ufs_mtk_pltfrm_xo_ufs_req(struct ufs_hba *hba, bool on)
 		if (retry) {
 			retry--;
 		} else {
-			dev_err(hba->dev, "XO_UFS ack failed\n");
+			dev_notice(hba->dev, "XO_UFS ack failed\n");
 			return -EIO;
 		}
 	} while (1);
@@ -367,7 +381,7 @@ int ufs_mtk_pltfrm_xo_ufs_req(struct ufs_hba *hba, bool on)
 	}
 
 	/* inform ATF clock is off */
-	if (!on)
+	if (!on && !hba->auto_bkops_enabled)
 		mt_secure_call(MTK_SIP_KERNEL_UFS_CTL, 8, 0, 0, 0);
 
 	return 0;
@@ -435,8 +449,6 @@ int ufs_mtk_pltfrm_ref_clk_ctrl(struct ufs_hba *hba, bool on)
 			ret = ufs_mtk_pltfrm_xo_ufs_req(hba, false);
 			if (ret)
 				goto out;
-		} else if (val == VENDOR_POWERSTATE_DISABLED) {
-			/* hba stop after shoutdown, do nothing */
 		} else {
 			dev_info(hba->dev, "%s: power state (%d) clk not off\n",
 				__func__, val);
@@ -461,7 +473,7 @@ out:
  */
 int ufs_mtk_pltfrm_deepidle_check_h8(void)
 {
-	/* No Need for MT6885 */
+	/* No Need */
 	return 0;
 }
 
@@ -471,7 +483,7 @@ int ufs_mtk_pltfrm_deepidle_check_h8(void)
  */
 void ufs_mtk_pltfrm_deepidle_leave(void)
 {
-	/* No Need for MT6885 */
+	/* No Need */
 }
 
 /**
@@ -481,7 +493,7 @@ void ufs_mtk_pltfrm_deepidle_leave(void)
  */
 void ufs_mtk_pltfrm_deepidle_lock(struct ufs_hba *hba, bool lock)
 {
-	/* No Need for MT6885 */
+	/* No Need */
 }
 
 int ufs_mtk_pltfrm_host_sw_rst(struct ufs_hba *hba, u32 target)
@@ -494,7 +506,7 @@ int ufs_mtk_pltfrm_host_sw_rst(struct ufs_hba *hba, u32 target)
 		return 1;
 	}
 
-	dev_dbg(hba->dev, "ufs_mtk_host_sw_rst: 0x%x\n", target);
+	dev_info(hba->dev, "ufs_mtk_host_sw_rst: 0x%x\n", target);
 
 	ufshcd_update_evt_hist(hba, UFS_EVT_SW_RESET, (u32)target);
 
@@ -536,22 +548,13 @@ int ufs_mtk_pltfrm_host_sw_rst(struct ufs_hba *hba, u32 target)
 
 	udelay(100);
 
-	if (target & SW_RST_TARGET_UFSHCI) {
-		/* clear HCI reset */
+	if (target & SW_RST_TARGET_MPHY) {
+		/* clear Mphy reset */
 		reg = readl(ufs_mtk_mmio_base_infracfg_ao +
-			REG_UFSHCI_SW_RST_CLR);
-		reg = reg | (1 << REG_UFSHCI_SW_RST_CLR_BIT);
+			REG_UFSPHY_SW_RST_CLR);
+		reg = reg | (1 << REG_UFSPHY_SW_RST_CLR_BIT);
 		writel(reg,
-			ufs_mtk_mmio_base_infracfg_ao + REG_UFSHCI_SW_RST_CLR);
-	}
-
-	if (target & SW_RST_TARGET_UFSCPT) {
-		/* clear AES reset */
-		reg = readl(ufs_mtk_mmio_base_infracfg_ao +
-			REG_UFSCPT_SW_RST_CLR);
-		reg = reg | (1 << REG_UFSCPT_SW_RST_CLR_BIT);
-		writel(reg,
-			ufs_mtk_mmio_base_infracfg_ao + REG_UFSCPT_SW_RST_CLR);
+			ufs_mtk_mmio_base_infracfg_ao + REG_UFSPHY_SW_RST_CLR);
 	}
 
 	if (target & SW_RST_TARGET_UNIPRO) {
@@ -563,13 +566,22 @@ int ufs_mtk_pltfrm_host_sw_rst(struct ufs_hba *hba, u32 target)
 			ufs_mtk_mmio_base_infracfg_ao + REG_UNIPRO_SW_RST_CLR);
 	}
 
-	if (target & SW_RST_TARGET_MPHY) {
-		/* clear Mphy reset */
+	if (target & SW_RST_TARGET_UFSCPT) {
+		/* clear AES reset */
 		reg = readl(ufs_mtk_mmio_base_infracfg_ao +
-			REG_UFSPHY_SW_RST_CLR);
-		reg = reg | (1 << REG_UFSPHY_SW_RST_CLR_BIT);
+			REG_UFSCPT_SW_RST_CLR);
+		reg = reg | (1 << REG_UFSCPT_SW_RST_CLR_BIT);
 		writel(reg,
-			ufs_mtk_mmio_base_infracfg_ao + REG_UFSPHY_SW_RST_CLR);
+			ufs_mtk_mmio_base_infracfg_ao + REG_UFSCPT_SW_RST_CLR);
+	}
+
+	if (target & SW_RST_TARGET_UFSHCI) {
+		/* clear HCI reset */
+		reg = readl(ufs_mtk_mmio_base_infracfg_ao +
+			REG_UFSHCI_SW_RST_CLR);
+		reg = reg | (1 << REG_UFSHCI_SW_RST_CLR_BIT);
+		writel(reg,
+			ufs_mtk_mmio_base_infracfg_ao + REG_UFSHCI_SW_RST_CLR);
 	}
 
 	udelay(100);
@@ -605,11 +617,11 @@ int ufs_mtk_pltfrm_parse_dt(struct ufs_hba *hba)
 
 		if (IS_ERR(*(void **)&ufs_mtk_mmio_base_gpio)) {
 			err = PTR_ERR(*(void **)&ufs_mtk_mmio_base_gpio);
-			dev_err(hba->dev, "error: ufs_mtk_mmio_base_gpio init fail\n");
+			dev_notice(hba->dev, "error: ufs_mtk_mmio_base_gpio init fail\n");
 			ufs_mtk_mmio_base_gpio = NULL;
 		}
 	} else
-		dev_err(hba->dev, "error: node_gpio init fail\n");
+		dev_notice(hba->dev, "error: node_gpio init fail\n");
 
 	/* get ufs_mtk_mmio_base_ufs_mphy */
 
@@ -621,11 +633,11 @@ int ufs_mtk_pltfrm_parse_dt(struct ufs_hba *hba)
 
 		if (IS_ERR(*(void **)&ufs_mtk_mmio_base_ufs_mphy)) {
 			err = PTR_ERR(*(void **)&ufs_mtk_mmio_base_ufs_mphy);
-			dev_err(hba->dev, "error: ufs_mtk_mmio_base_ufs_mphy init fail\n");
+			dev_notice(hba->dev, "error: ufs_mtk_mmio_base_ufs_mphy init fail\n");
 			ufs_mtk_mmio_base_ufs_mphy = NULL;
 		}
 	} else
-		dev_err(hba->dev, "error: ufs_mtk_mmio_base_ufs_mphy init fail\n");
+		dev_notice(hba->dev, "error: ufs_mtk_mmio_base_ufs_mphy init fail\n");
 
 
 	/* get ufs_mtk_mmio_base_infracfg_ao */
@@ -636,11 +648,11 @@ int ufs_mtk_pltfrm_parse_dt(struct ufs_hba *hba)
 
 		if (IS_ERR(*(void **)&ufs_mtk_mmio_base_infracfg_ao)) {
 			err = PTR_ERR(*(void **)&ufs_mtk_mmio_base_infracfg_ao);
-			dev_err(hba->dev, "error: ufs_mtk_mmio_base_infracfg_ao init fail\n");
+			dev_notice(hba->dev, "error: ufs_mtk_mmio_base_infracfg_ao init fail\n");
 			ufs_mtk_mmio_base_infracfg_ao = NULL;
 		}
 	} else
-		dev_err(hba->dev, "error: ufs_mtk_mmio_base_infracfg_ao init fail\n");
+		dev_notice(hba->dev, "error: ufs_mtk_mmio_base_infracfg_ao init fail\n");
 
 	/* get ufs_mtk_mmio_base_apmixed */
 	node_apmixed =
@@ -650,11 +662,11 @@ int ufs_mtk_pltfrm_parse_dt(struct ufs_hba *hba)
 
 		if (IS_ERR(*(void **)&ufs_mtk_mmio_base_apmixed)) {
 			err = PTR_ERR(*(void **)&ufs_mtk_mmio_base_apmixed);
-			dev_info(hba->dev, "error: ufs_mtk_mmio_base_apmixed init fail\n");
+			dev_notice(hba->dev, "error: ufs_mtk_mmio_base_apmixed init fail\n");
 			ufs_mtk_mmio_base_apmixed = NULL;
 		}
 	} else
-		dev_info(hba->dev, "error: ufs_mtk_mmio_base_apmixed init fail\n");
+		dev_notice(hba->dev, "error: ufs_mtk_mmio_base_apmixed init fail\n");
 
 	/* get ufs_mtk_mmio_base_topckgen */
 	node_topckgen =
@@ -664,11 +676,11 @@ int ufs_mtk_pltfrm_parse_dt(struct ufs_hba *hba)
 
 		if (IS_ERR(*(void **)&ufs_mtk_mmio_base_topckgen)) {
 			err = PTR_ERR(*(void **)&ufs_mtk_mmio_base_topckgen);
-			dev_info(hba->dev, "error: ufs_mtk_mmio_base_topckgen init fail\n");
+			dev_notice(hba->dev, "error: ufs_mtk_mmio_base_topckgen init fail\n");
 			ufs_mtk_mmio_base_topckgen = NULL;
 		}
 	} else
-		dev_info(hba->dev, "error: ufs_mtk_mmio_base_topckgen init fail\n");
+		dev_notice(hba->dev, "error: ufs_mtk_mmio_base_topckgen init fail\n");
 
 	return err;
 }
