@@ -14,7 +14,6 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
-#include <linux/of_device.h>
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH
 #include <mt-plat/upmu_common.h>
 #endif
@@ -22,12 +21,13 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
-#ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
+#ifdef CONFIG_MTK_PMIC_NEW_ARCH
 static int kpd_enable_lprst = 1;
 #endif
 static u16 kpd_keymap_state[KPD_NUM_MEMS] = {
 	0xffff, 0xffff, 0xffff, 0xffff, 0x00ff
 };
+
 
 static void enable_kpd(int enable)
 {
@@ -49,29 +49,11 @@ void kpd_get_keymap_state(u16 state[])
 	state[4] = readw(KP_MEM5);
 	kpd_print(KPD_SAY "register = %x %x %x %x %x\n",
 		state[0], state[1], state[2], state[3], state[4]);
-
 }
 
-/********************************************************************/
 void long_press_reboot_function_setting(void)
 {
-	struct device_node *np = NULL;
-	int ret = 0;
-	unsigned int long_press_switch = 1;
-	np = of_find_node_by_name(NULL, "long_press_contorl");
-	if(!np){
-		kpd_info("get long press contorl node failed\n");
-	} else {
-	ret = of_property_read_u32(np,"long_press_switch",&long_press_switch);
-	if(ret) {
-		kpd_info("get long_press_switch failed\n");
-	}
-	}
-
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
-	/* unlock PMIC protect key */
-	pmic_set_register_value(PMIC_RG_CPS_W_KEY, 0x4729);
-	if (long_press_switch != 0) {
 	if (kpd_enable_lprst && get_boot_mode() == NORMAL_BOOT) {
 		kpd_info("Normal Boot long press reboot selection\n");
 
@@ -113,17 +95,11 @@ void long_press_reboot_function_setting(void)
 #endif
 
 	}
-	} else {
-		kpd_info("disable normal or other mode LPRST\n");
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x00);
-	}
-	/* lock PMIC protect key */
-	pmic_set_register_value(PMIC_RG_CPS_W_KEY, 0);
 #endif
 }
 
 /* FM@suspend */
-bool __attribute__ ((weak)) ConditionEnterSuspend(void)
+bool __attribute__ ((weak)) mtk_audio_condition_enter_suspend(void)
 {
 	return true;
 }
@@ -131,10 +107,12 @@ bool __attribute__ ((weak)) ConditionEnterSuspend(void)
 /********************************************************************/
 void kpd_wakeup_src_setting(int enable)
 {
+//ifdef OPLUS_BUG_STABILITY
+#if 0
 	int is_fm_radio_playing = 0;
 
 	/* If FM is playing, keep keypad as wakeup source */
-	if (ConditionEnterSuspend() == true)
+	if (mtk_audio_condition_enter_suspend() == true)
 		is_fm_radio_playing = 0;
 	else
 		is_fm_radio_playing = 1;
@@ -148,6 +126,15 @@ void kpd_wakeup_src_setting(int enable)
 			enable_kpd(0);
 		}
 	}
+#endif
+        if (enable == 1) {
+                kpd_print("enable kpd work!\n");
+                enable_kpd(1);
+        } else {
+                kpd_print("disable kpd work!\n");
+                enable_kpd(0);
+        }
+//#endif  /*OPLUS_BUG_STABILITY*/
 }
 
 /********************************************************************/
@@ -167,18 +154,15 @@ void kpd_init_keymap_state(u16 keymap_state[])
 
 	for (i = 0; i < KPD_NUM_MEMS; i++)
 		keymap_state[i] = kpd_keymap_state[i];
-	kpd_info("init_keymap_state done: %x %x %x %x %x!\n",
-	keymap_state[0], keymap_state[1], keymap_state[2],
+		kpd_info("init_keymap_state done: %x %x %x %x %x!\n",
+			keymap_state[0], keymap_state[1], keymap_state[2],
 		 keymap_state[3], keymap_state[4]);
 }
-
-/********************************************************************/
 
 void kpd_set_debounce(u16 val)
 {
 	mt_reg_sync_writew((u16) (val & KPD_DEBOUNCE_MASK), KP_DEBOUNCE);
 }
-
 
 void kpd_double_key_enable(int en)
 {
@@ -191,16 +175,15 @@ void kpd_double_key_enable(int en)
 		writew((u16) (tmp & ~KPD_DOUBLE_KEY_MASK), KP_SEL);
 }
 
-/********************************************************************/
 void kpd_pmic_rstkey_hal(unsigned long pressed)
 {
 	if (kpd_dts_data.kpd_sw_rstkey != 0) {
 		input_report_key(kpd_input_dev, kpd_dts_data.kpd_sw_rstkey,
-			pressed);
+				pressed);
 		input_sync(kpd_input_dev);
 		kpd_print(KPD_SAY "(%s) HW keycode =%d using PMIC\n",
-		       pressed ? "pressed" : "released",
-		       kpd_dts_data.kpd_sw_rstkey);
+			pressed ? "pressed" : "released",
+				kpd_dts_data.kpd_sw_rstkey);
 	}
 }
 
@@ -209,15 +192,13 @@ void kpd_pmic_pwrkey_hal(unsigned long pressed)
 	input_report_key(kpd_input_dev, kpd_dts_data.kpd_sw_pwrkey, pressed);
 	input_sync(kpd_input_dev);
 	kpd_print(KPD_SAY "(%s) HW keycode =%d using PMIC\n",
-	       pressed ? "pressed" : "released", kpd_dts_data.kpd_sw_pwrkey);
+		pressed ? "pressed" : "released", kpd_dts_data.kpd_sw_pwrkey);
 }
 
 static int mrdump_eint_state;
 static int mrdump_ext_rst_irq;
 static irqreturn_t mrdump_rst_eint_handler(int irq, void *data)
 {
-	/* bool pressed; */
-
 	if (mrdump_eint_state == 0) {
 		irq_set_irq_type(mrdump_ext_rst_irq, IRQ_TYPE_LEVEL_HIGH);
 		mrdump_eint_state = 1;
@@ -231,7 +212,7 @@ static irqreturn_t mrdump_rst_eint_handler(int irq, void *data)
 
 	return IRQ_HANDLED;
 }
-/**********************************************************************/
+
 void mt_eint_register(void)
 {
 	int ret;
@@ -243,13 +224,19 @@ void mt_eint_register(void)
 	if (!node)
 		kpd_print("can't find compatible node\n");
 	else {
+
 		mrdump_ext_rst_irq = irq_of_parse_and_map(node, 0);
-		ret = request_irq(mrdump_ext_rst_irq, mrdump_rst_eint_handler,
-				  IRQF_TRIGGER_NONE, "mrdump_ext_rst-eint",
-				  NULL);
-		if (ret > 0)
-			kpd_print("EINT IRQ LINE NOT AVAILABLE\n");
+		if (mrdump_ext_rst_irq) {
+			ret = request_irq(mrdump_ext_rst_irq,
+					mrdump_rst_eint_handler,
+					IRQF_TRIGGER_NONE,
+					"mrdump_ext_rst-eint", NULL);
+			if (ret > 0)
+				kpd_print("EINT IRQ LINE NOT AVAILABLE\n");
+			ret = enable_irq_wake(mrdump_ext_rst_irq);
+			if (ret)
+				kpd_print("%s: enable_irq_wake failed.\n",
+					__func__);
+		}
 	}
 }
-
-/**********************************************************************/
